@@ -62,3 +62,18 @@ class Browser(object):
         WebDriverWait(self, 30).until(
             EC.text_to_be_present_in_element_value(locator, key)
         )
+
+    def wait_for_loaded(self):
+#        print("wait_for_loaded: start")
+#        self.driver.find_element_by_tag_name("html")
+        WebDriverWait(self, 20).until(
+            lambda driver: driver.execute_script("return document.readyState") == "complete"
+        )
+#        print(self.execute_script("return document.readyState"))
+#        print("wait_for_loaded: end")
+
+    def wait_for_item(self, locator):
+        WebDriverWait(self, 20).until(
+            EC.presence_of_element_located(locator)
+        )
+        return self.find_element(locator[0], locator[1])
