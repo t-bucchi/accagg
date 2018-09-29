@@ -23,16 +23,23 @@ import accagg.bank
 from accagg.passbook import PassBook
 from accagg.passwordmanager import PasswordManager
 
-name = 'SMBC'
+def aggregate(account):
+    aggregator = accagg.bank.Factory.aggregator(account['BANKID'])
+    all_data = aggregator.run(account)
+    #print(all_data)
+
+    for account in all_data:
+    #    print(account)
+        passbook = PassBook(name, account)
+        passbook.add(all_data[account])
+        passbook.save()
 
 password = PasswordManager()
-account = password.get(name)
-aggregator = accagg.bank.Factory.aggregator(account['BANKID'])
-all_data = aggregator.run(account)
-#print(all_data)
 
-for account in all_data:
-#    print(account)
-    passbook = PassBook(name, account)
-    passbook.add(all_data[account])
-    passbook.save()
+for name in password.list():
+    print("Aggregate " + name)
+    account = password.get(name)
+    if (account.get('disabled')):
+        print(" ...disabled");
+        continue
+    aggregate(account)

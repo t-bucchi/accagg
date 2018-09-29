@@ -26,6 +26,9 @@ class PasswordManager:
         self.__filename = filename
         self.__parser.read(self.__filename)
 
+    def list(self):
+        return self.__parser.sections()
+
     def get(self, name):
         items = {'name': name}
         for item in self.__parser.items(name):
