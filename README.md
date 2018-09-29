@@ -43,7 +43,7 @@ $ pip3 install selenium
 
 Firefox の [webdriver](https://github.com/mozilla/geckodriver/releases) はダウンロード後、パスの通った場所にコピーしてください。
 
-たとえば、 展開後の geckodriver を ~/bin にコピーして、~/bin にパスを通してください。
+たとえば、 展開後の geckodriver を \~/bin にコピーして、\~/bin にパスを通してください。
 
 ## 設定
 
