@@ -77,3 +77,19 @@ class Browser(object):
             EC.presence_of_element_located(locator)
         )
         return self.find_element(locator[0], locator[1])
+
+    def wait_element(self, locator):
+        # wait for element
+        WebDriverWait(self, 30).until(
+            EC.element_to_be_clickable(locator)
+        )
+        return self.find_element(locator[0], locator[1])
+
+    def wait_for_title_changed(self):
+        org_title = self.title
+#        print(org_title)
+        for i in range(1, 20):
+#            print(self.title)
+            if org_title != self.title:
+                break
+            sleep(0.5)

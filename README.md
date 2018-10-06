@@ -25,7 +25,8 @@ csv形式であれば、スクリプトで集計したり、表計算ソフト�
 少しづつ増やしていければいいなと思っています。
 
 * [三井住友銀行](/doc/bank-smbc.md)
-* [イオン友銀行](/doc/bank-aeonbank.md)
+* [イオン銀行](/doc/bank-aeonbank.md)
+* [SBIネット銀行](/doc/bank-sbinetbank.md)
 
 # 使い方
 ## 必要な環境
