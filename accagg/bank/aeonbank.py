@@ -79,7 +79,7 @@ class Aggregator(Aggregator):
             if text == '合言葉認証':
                 text = browser.find_element_by_css_selector('.InputTableStyle1 td:nth-of-type(1)').text.strip()
 #                print(text)
-                import pdb; pdb.set_trace()
+#                import pdb; pdb.set_trace()
                 answer = ""
                 if text == login_info['Q1']:
                     answer = login_info['A1']
