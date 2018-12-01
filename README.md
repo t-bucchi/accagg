@@ -29,12 +29,14 @@ csv形式であれば、スクリプトで集計したり、表計算ソフト�
 * [SBIネット銀行](/doc/bank-sbinetbank.md)
 * [新生銀行](/doc/bank-shinseibank.md)
 * [THEO](/doc/bank-theo.md)
+* [WealthNavi for 住信SBIネット銀行](/doc/bank-wealthnavi-for-sbi.md)
 
 # 使い方
 ## 必要な環境
 
 * python3
 * selenium
+* BeautifulSoup (※一部の銀行のみ)
 * webdriver ([Firefox](https://github.com/mozilla/geckodriver/releases))
 
 Ubuntu 18.04 の場合は、python3 と selenium は以下のコマンドでインストールできます。
