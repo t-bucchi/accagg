@@ -28,6 +28,7 @@ csv形式であれば、スクリプトで集計したり、表計算ソフト�
 * [イオン銀行](/doc/bank-aeonbank.md)
 * [SBIネット銀行](/doc/bank-sbinetbank.md)
 * [新生銀行](/doc/bank-shinseibank.md)
+* [THEO](/doc/bank-theo.md)
 
 # 使い方
 ## 必要な環境
