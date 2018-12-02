@@ -1,4 +1,4 @@
-# sbinetbank
+# wealthnavi_for_sbi
 
 ## 銀行名
 

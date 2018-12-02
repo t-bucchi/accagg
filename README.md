@@ -26,7 +26,7 @@ csv形式であれば、スクリプトで集計したり、表計算ソフト�
 
 * [三井住友銀行](/doc/bank-smbc.md)
 * [イオン銀行](/doc/bank-aeonbank.md)
-* [SBIネット銀行](/doc/bank-sbinetbank.md)
+* [住信SBIネット銀行](/doc/bank-sbinetbank.md)
 * [新生銀行](/doc/bank-shinseibank.md)
 * [THEO](/doc/bank-theo.md)
 * [WealthNavi for 住信SBIネット銀行](/doc/bank-wealthnavi-for-sbi.md)

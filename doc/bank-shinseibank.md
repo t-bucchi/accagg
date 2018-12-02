@@ -1,4 +1,4 @@
-# sbinetbank
+# shinseibank
 
 ## 銀行名
 
