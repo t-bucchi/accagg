@@ -61,7 +61,7 @@ class Aggregator(Aggregator):
         browser.get(URL)
         browser.wait_for_loaded()
 
-        import pdb; pdb.set_trace()
+#        import pdb; pdb.set_trace()
 
         # enter
         browser.sync_send_keys((By.ID, 'username'), login_info['EMAIL'])
@@ -72,10 +72,11 @@ class Aggregator(Aggregator):
 
         # ログイン後画面
         html = browser.find_element_by_css_selector('.data-history tbody').get_attribute('innerHTML')
-        rows = BeautifulSoup(html).find_all('tr')
+        rows = BeautifulSoup(html, "html.parser").find_all('tr')
+
+        data = []
 
         for item in rows:
-#            print(item.get_attribute('innerHTML'))
             date = self._decode_date(item.th.string)
             c = [x.string for x in item.select(".value")]
 
@@ -84,7 +85,6 @@ class Aggregator(Aggregator):
                     'desc' : '',
                     'balance' : int(float(c[0]))
             }
-#            print('\t'.join(item))
 
             # Prepend.
             # Detail list is sorted by descending order
