@@ -2,7 +2,7 @@
 #
 # This file is part of accagg.
 #
-# Copyright (C) 2018 bucchi <bucchi79@gmail.com>
+# Copyright (C) 2018-2019 bucchi <bucchi79@gmail.com>
 #
 #  Foobar is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published by
@@ -104,11 +104,14 @@ class Aggregator(Aggregator):
 
         # 期限切れなら次へをクリック
         try:
+            browser.implicitly_wait(0.1)
             es = browser.find_elements_by_name("btnNext")
+            browser.implicitly_wait(3)
         except NoSuchElementException:
             print("no entry")
         else:
-            es[0].click()
+            if len(es) > 0:
+                es[0].click()
 
         # wait
         browser.wait_for_loaded()
@@ -181,6 +184,7 @@ class Aggregator(Aggregator):
         # 預金明細
 
         data = []
+#        import pdb; pdb.set_trace()
 
         # 解約明細
         browser.find_element_by_link_text("解約明細").click()
@@ -193,15 +197,29 @@ class Aggregator(Aggregator):
                 break
             sleep(0.5)
 
+#001 | スーパー定期 | 2017年06月09日 | 12カ月 | xxx円 | 年 0.050%
+#    | 　　　　　　 | 2018年06月09日 |        |       |   満期
+#    |    年 0.050% |          yyy円 |  zzz円 | 0円
+#
+# date:2017/6/9, deposit: xxx, balance:xxx desc: スーパー定期
+# date:2018/6/9, deposit: zzz, balance:xxx+zzz desc: スーパー定期
+# date:2018/6/9, deposit: -xxx-zzz, balance:0 desc: スーパー定期
+
+        current_date = browser.find_element_by_css_selector('p.TimeStamp').text
+        current_date = self.__decode_date(re.sub(r'時点.*', '', current_date))
+
         while True:
             item = {}
             deposit = 0
             end_date = 0
+            sub_data = []
             for row in browser.find_elements_by_css_selector('table.fixdDtilTable tr'):
-                if '預入番号' in row.text:
+
+                # 表のヘッダ部分をスキップ
+                if row.get_attribute('class') == 'center':
                     continue
-                if '解約' in row.text:
-                    continue
+
+                # 3行の場所を特定
                 pos = 'bottom'
                 if 'class="Top"' in row.get_attribute('innerHTML'):
                     pos = 'top'
@@ -216,24 +234,27 @@ class Aggregator(Aggregator):
                             'desc' : cols[1].text,
                             'balance' : 0
                     }
-                    data.append(item)
+                    sub_data = [item]
                 elif pos == 'middle':
                     end_date = self.__decode_date(cols[0].text)
                 else:
-                    interest = self.__decode_amount(cols[2].text)
-                    item = {'date' : end_date,
-                            'deposit' : interest,
-                            'desc' : '',
-                            'balance' : 0
-                    }
-                    data.append(item)
-                    item = {'date' : end_date,
-                            'deposit' : -deposit - interest,
-                            'desc' : '',
-                            'balance' : 0
-                    }
-                    data.append(item)
-#                print(data)
+                    if end_date <= current_date:
+                        interest = self.__decode_amount(cols[2].text)
+                        item = {'date' : end_date,
+                                'deposit' : interest,
+                                'desc' : '',
+                                'balance' : 0
+                        }
+                        sub_data.append(item)
+                        item = {'date' : end_date,
+                                'deposit' : -deposit - interest,
+                                'desc' : '',
+                                'balance' : 0
+                        }
+                        sub_data.append(item)
+                        data[0:0] = sub_data  # prepend
+                        sub_data = []
+#                        print(data)
             break
 
         # 預入明細
@@ -259,7 +280,11 @@ class Aggregator(Aggregator):
                 if 'class="Top"' in row.get_attribute('innerHTML'):
                     top = True
 
+                # 明細なし
                 cols = row.find_elements_by_tag_name('td')
+                if len(cols) == 1:
+                    continue
+
                 if top:
                     deposit = self.__decode_amount(cols[4].text)
                     item = {'date' : self.__decode_date(cols[2].text),
@@ -267,13 +292,16 @@ class Aggregator(Aggregator):
                             'desc' : cols[1].text,
                             'balance' : 0
                     }
+                    data.append(item)
                 else:
-                    item = {'date' : self.__decode_date(cols[0].text),
-                            'deposit' : -deposit,
-                            'desc' : '',
-                            'balance' : 0
-                    }
-                data.append(item)
+                    end_data = self.__decode_date(cols[0].text)
+                    if end_date <= current_date:
+                        item = {'date' : self.__decode_date(cols[0].text),
+                                'deposit' : -deposit,
+                                'desc' : '',
+                                'balance' : 0
+                        }
+                        data.append(item)
 #                print(data)
             break
 
