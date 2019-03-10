@@ -2,7 +2,7 @@
 #
 # This file is part of accagg.
 #
-# Copyright (C) 2018 bucchi <bucchi79@gmail.com>
+# Copyright (C) 2018-2019 bucchi <bucchi79@gmail.com>
 #
 #  Foobar is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published by
@@ -34,6 +34,15 @@ class Browser(object):
         if hasattr(self.driver, name):
             return getattr(self.driver, name)
         raise AttributeError
+
+    @classmethod
+    def firefox(self):
+        profile = webdriver.FirefoxProfile()
+        # 1 - Allow all images
+        # 2 - Block all images
+        # 3 - Block 3rd party images
+        profile.set_preference("permissions.default.image", 2)
+        return Browser(webdriver.Firefox(firefox_profile = profile))
 
     def download(self, url):
         ua = {'User-agent': self.execute_script("return navigator.userAgent")}

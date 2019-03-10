@@ -2,7 +2,7 @@
 #
 # This file is part of accagg.
 #
-# Copyright (C) 2018 bucchi <bucchi79@gmail.com>
+# Copyright (C) 2018-2019 bucchi <bucchi79@gmail.com>
 #
 #  Foobar is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published by
@@ -62,8 +62,8 @@ class Aggregator(Aggregator):
     def run(self, login_info):
         URL = "https://direct.smbc.co.jp/aib/aibgsjsw5001.jsp"
 
-        browser = Browser(webdriver.Firefox())
         #browser = webdriver.Chrome()
+        browser = Browser.firefox()
         #browser = webdriver.PhantomJS()
         browser.implicitly_wait(3)
 

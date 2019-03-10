@@ -57,7 +57,7 @@ class Aggregator(Aggregator):
     def run(self, login_info):
         URL = "https://www.aeonbank.co.jp/login/ib_02.html"
 
-        browser = Browser(webdriver.Firefox())
+        browser = Browser.firefox()
         browser.implicitly_wait(3)
 
         # open URL

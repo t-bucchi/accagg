@@ -2,7 +2,7 @@
 #
 # This file is part of accagg.
 #
-# Copyright (C) 2018 bucchi <bucchi79@gmail.com>
+# Copyright (C) 2018-2019 bucchi <bucchi79@gmail.com>
 #
 #  Foobar is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published by
@@ -67,7 +67,7 @@ class Aggregator(Aggregator):
         URL = "https://bk.shinseibank.com/SFC/apps/services/www/SFC/desktopbrowser/default/login?mode=1&forward=SA0001"
 
 #        import pdb; pdb.set_trace()
-        browser = Browser(webdriver.Firefox())
+        browser = Browser.firefox()
         browser.implicitly_wait(180)
 
         # open URL
