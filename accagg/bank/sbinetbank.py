@@ -23,6 +23,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.action_chains import ActionChains
 
 from accagg.browser import Browser
 
@@ -89,6 +90,19 @@ class Aggregator(Aggregator):
 
         # ホーム
 
+        result = {}
+        # 普通預金
+        data = self.__get_ordinary(browser)
+        result['ordinary'] = data
+
+        # 円定期預金
+        data = self.__get_time_deposit(browser)
+        result['time_deposit'] = data
+
+        browser.quit()
+        return result
+
+    def __get_ordinary(self, browser):
         # 入出金明細
         browser.find_element_by_id('main').find_element_by_link_text('入出金明細').click()
 
@@ -150,6 +164,39 @@ class Aggregator(Aggregator):
 
             es.click()
 
-#        print(data)
-        browser.quit()
-        return {'ordinary': data}
+        # ホームへ戻る
+        browser.find_element_by_id('globalFoot').find_element_by_link_text('ホーム').click()
+
+        return data
+
+    def __get_time_deposit(self, browser):
+        # 入出金明細
+        actions = ActionChains(browser)
+        actions.move_to_element(browser.find_element_by_link_text('口座情報')).perform()
+        sleep(0.5)
+        browser.wait_for_item((By.LINK_TEXT, '残高照会（口座別）')).click()
+        browser.find_element_by_link_text('取引履歴').click()
+
+#        browser.find_element_by_link_text('残高照会（口座別）').click()
+
+        data = []
+        balance = 0
+        for item in browser.find_elements_by_css_selector('.tableb02 table > tbody > tr'):
+#                print(item.get_attribute('innerHTML'))
+            cols = item.find_elements_by_tag_name('td')
+            c = [x.text for x in cols]
+#               print(c)
+
+            if len(c) > 2:
+                # Top
+                deposit = self._decode_amount(c[3])
+                balance += deposit
+                item = {'date' : self.__decode_date(c[0]),
+                        'deposit' : deposit,
+                        'desc' : c[1],
+                        'balance' : balance
+                }
+#                print(item)
+                data.append(item)
+
+        return data
