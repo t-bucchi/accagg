@@ -4,7 +4,7 @@
 #
 # This file is part of accagg.
 #
-# Copyright (C) 2018 bucchi <bucchi79@gmail.com>
+# Copyright (C) 2018-2019 bucchi <bucchi79@gmail.com>
 #
 #  Foobar is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published by
@@ -28,10 +28,35 @@ def aggregate(account):
     all_data = aggregator.run(account)
     #print(all_data)
 
-    for account in all_data:
-    #    print(account)
-        passbook = PassBook(name, account)
-        passbook.add(all_data[account])
+    # old format
+    if type(all_data) is dict:
+        # Convert to new format
+
+        new_data = []
+        for name, data in all_data.items():
+            meta = {
+                'name': name,
+                'unit': 'Yen',
+                'account': '普通',
+                'history': []}
+            for i in data:
+                item = {
+                    'date': i['date'],
+                    'price': 1,
+                    'amount': i['deposit'],
+                    'payout': i['deposit'],
+                    'balance': i['balance'],
+                    'desc': i['desc'],
+                }
+                meta['history'].append(item)
+            new_data.append(meta)
+        all_data = new_data
+
+    # new format
+    for data in all_data:
+        history = data.pop('history')
+        passbook = PassBook(account['name'], data)
+        passbook.add(history, info = data)
         passbook.save()
 
 password = PasswordManager()

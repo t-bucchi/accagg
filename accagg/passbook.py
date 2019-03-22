@@ -2,7 +2,7 @@
 #
 # This file is part of accagg.
 #
-# Copyright (C) 2018 bucchi <bucchi79@gmail.com>
+# Copyright (C) 2018-2019 bucchi <bucchi79@gmail.com>
 #
 #  Foobar is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU Affero General Public License as published by
@@ -21,24 +21,36 @@ import csv
 import datetime
 
 class PassBook(object):
-    def __init__(self, bankid, type):
+
+    def __init__(self, accountid, bankinfo):
         self.__data = []
-        self.__bankid = bankid
-        self.__type = type
+        self.__accountid = accountid
+        self.__info = bankinfo
         self.load()
 
     @property
-    def bankid(self):
-        return self.__bankid
+    def accountid(self):
+        return self.__accountid
+
+    @property
+    def name(self):
+        return self.__info['name']
 
     @property
     def type(self):
-        return self.__type
+        return self.__info['account']
 
-    def add(self, items):
+    @property
+    def info(self):
+        return self.__info
+
+    def add(self, items, info = None):
         if len(self.__data) == 0:
             self.__data = items
             return
+
+        if info:
+            self.__info = info
 
         new_data = []
         while len(self.__data) > 0 and len(items) > 0:
@@ -63,51 +75,62 @@ class PassBook(object):
         self.__data = new_data
 
     def dump(self):
-        print('id:{} type:{}\n'.format(self.__bankid, self.__type))
+        print('id:{} name:{} type:{}\n'.format(self.__accountid,
+            self.__name, self.__type))
         print(self.__data)
 
     def __filename(self):
-        return self.__bankid + '-' + self.__type + '.csv';
+        return self.accountid + '-' + self.name + '.csv';
 
     def save(self):
         with open(self.__filename(), 'w') as f:
             writer = csv.writer(f, quoting = csv.QUOTE_NONNUMERIC)
+            for key, val in self.__info.items():
+                writer.writerow([key, val])
+            writer.writerow(['==='])
             for i in self.__data:
-                writer.writerow([i['date'], i['deposit'],
+                writer.writerow([i['date'], i['price'], i['amount'], i['payout'],
                                  i['balance'], i['desc']]);
 
+    def __parse_csv(self, cols):
+        date = cols[0].split('-')
+        return {'date': datetime.date(int(date[0]), int(date[1]), int(date[2])),
+                'price': cols[1],
+                'amount': cols[2],
+                'payout': cols[3],
+                'balance': cols[4],
+                'desc': cols[5]}
+
+    def __parse_old_csv(self, cols):
+        date = cols[0].split('-')
+        return {'date': datetime.date(int(date[0]), int(date[1]), int(date[2])),
+                'price': 1,
+                'amount': cols[1],
+                'payout': cols[1],
+                'balance': cols[2],
+                'desc': cols[3]}
+
     def load(self):
-        self.__data = [];
+        self.__data = []
+        parser = self.__parse_csv   # to support old format
         try:
             with open(self.__filename(), 'r') as f:
-                reader = csv.reader(f)
+                self.__info = {}
+                reader = csv.reader(f, quoting = csv.QUOTE_NONNUMERIC)
+
                 for i in reader:
-                    date = i[0].split('-')
-                    data = {'date': datetime.date(int(date[0]), int(date[1]), int(date[2])),
-                            'deposit': int(i[1]),
-                            'balance': int(i[2]),
-                            'desc': i[3]}
-                    self.__data.append(data)
+                    # old format
+                    if len(i) > 2:
+                        parser = self.__parse_old_csv
+                        self.__data.append(parser(i))
+                        break
+
+                    if i[0] == '===':
+                        break
+                    self.__info[i[0]] = i[1]
+
+                for i in reader:
+                    self.__data.append(parser(i))
+
         except IOError:
             pass
-
-if __name__ == '__main__':
-    book = PassBook('hoge', 'test')
-    book.dump()
-    book.add([{'date': datetime.date(2018, 1, 1), 'deposit': 1, 'desc': 'desc', 'balance': 1}])
-    book.add([{'date': datetime.date(2018, 1, 1), 'deposit': 1, 'desc': 'desc', 'balance': 2}])
-    book.add([{'date': datetime.date(2018, 1, 1), 'deposit': 1, 'desc': 'desc', 'balance': 1},
-              {'date': datetime.date(2018, 1, 1), 'deposit': 1, 'desc': 'desc', 'balance': 2},
-              {'date': datetime.date(2018, 1, 1), 'deposit': 1, 'desc': 'desc', 'balance': 3}])
-    book.add([{'date': datetime.date(2018, 1, 1), 'deposit': 1, 'desc': 'desc', 'balance': 2},
-              {'date': datetime.date(2018, 1, 1), 'deposit': 1, 'desc': 'desc', 'balance': 3},
-              {'date': datetime.date(2018, 1, 1), 'deposit': 1, 'desc': 'desc', 'balance': 4},
-    ])
-    book.add([{'date': datetime.date(2018, 1, 1), 'deposit': 1, 'desc': 'desc', 'balance': 4},
-              {'date': datetime.date(2018, 1, 1), 'deposit': 1, 'desc': 'desc', 'balance': 5},
-              {'date': datetime.date(2018, 1, 1), 'deposit': 1, 'desc': 'desc', 'balance': 6},
-    ])
-    book.add([{'date': datetime.date(2017, 1, 1), 'deposit': 1, 'desc': 'desc', 'balance': 1}])
-    book.add([{'date': datetime.date(2017, 1, 1), 'deposit': 1, 'desc': 'desc', 'balance': 1}])
-    book.dump()
-    book.save()
