@@ -24,6 +24,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import Select
 
 from accagg.browser import Browser
 
@@ -109,22 +110,9 @@ class Aggregator(Aggregator):
 #        import pdb; pdb.set_trace()
         #
         browser.find_element_by_id('CD020202VALUE05').click()
-        browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdYearFrom"]').click()
-        sleep(0.2)
-        browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdYearFrom"]').send_keys(Keys.UP)
-        sleep(0.2)
-        browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdYearFrom"]').send_keys(Keys.UP)
-        sleep(0.2)
-        browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdYearFrom"]').send_keys(Keys.UP)
-        sleep(0.2)
-        browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdYearFrom"]').send_keys(Keys.UP)
-        sleep(0.2)
-        browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdYearFrom"]').send_keys(Keys.UP)
-        sleep(0.2)
-        browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdYearFrom"]').send_keys(Keys.UP)
-        sleep(0.2)
-        browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdYearFrom"]').send_keys(Keys.UP)
-        sleep(0.2)
+        Select(browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdYearFrom"]')).select_by_index(0)
+        Select(browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdMonthFrom"]')).select_by_index(0)
+        Select(browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdDayFrom"]')).select_by_index(0)
 
         # 表示
         browser.find_element_by_css_selector('input[value="表示"]').click()
