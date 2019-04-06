@@ -22,6 +22,7 @@
 import accagg.bank
 from accagg.passbook import PassBook
 from accagg.passwordmanager import PasswordManager
+from accagg.fund import Fund
 
 def aggregate(account):
     aggregator = accagg.bank.Factory.aggregator(account['BANKID'])
@@ -52,10 +53,22 @@ def aggregate(account):
             new_data.append(meta)
         all_data = new_data
 
+    fund = Fund()
+
     # new format
     for data in all_data:
         history = data.pop('history')
         passbook = PassBook(account['name'], data)
+        if data['unit'] != 'Yen' and not 'unitid' in passbook.info:
+            ids = fund.search(data['unit'])
+            if len(ids) == 1:
+                data['unitid'] = ids[0]['id']
+            else:
+                print("some ids found.\n")
+
+        data['bankid'] = aggregator.bankid()
+        data['bankname'] = aggregator.description()
+
         passbook.add(history, info = data)
         passbook.save()
 
