@@ -72,6 +72,12 @@ def aggregate(account):
         data['bankname'] = aggregator.description()
 
         passbook.add(history, info = data)
+        if data['unit'] != 'Yen' and not 'unitid' in passbook.info:
+            ids = fund.search(data['unit'])
+            if len(ids) == 1:
+                data['unitid'] = ids[0]['id']
+            else:
+                print("some ids found.\n")
         passbook.save()
 
 password = PasswordManager()
