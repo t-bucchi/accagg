@@ -119,7 +119,7 @@ class Aggregator(Aggregator):
         # ログイン後画面
 
         ## 明細照会をクリック
-        browser.find_element_by_css_selector(".CenterButnArea > input:nth-of-type(1)").click()
+        browser.find_element_by_link_text('口座一覧・残高照会').click()
         browser.wait_for_loaded()
 
         # 残高照会画面
