@@ -19,13 +19,18 @@
 
 import csv
 import datetime
+import glob
+import re
 
 class PassBook(object):
 
     def __init__(self, accountid, bankinfo):
         self.__data = []
         self.__accountid = accountid
-        self.__info = bankinfo
+        if type(bankinfo) is str:
+            self.__info = {'name': bankinfo}
+        else:
+            self.__info = bankinfo
         self.load()
 
     @property
@@ -76,7 +81,7 @@ class PassBook(object):
 
     def dump(self):
         print('id:{} name:{} type:{}\n'.format(self.__accountid,
-            self.__name, self.__type))
+            self.name, self.type))
         print(self.__data)
 
     def __filename(self):
@@ -115,6 +120,7 @@ class PassBook(object):
         parser = self.__parse_csv   # to support old format
         try:
             with open(self.__filename(), 'r') as f:
+                old_info = self.__info
                 self.__info = {}
                 reader = csv.reader(f, quoting = csv.QUOTE_NONNUMERIC)
 
@@ -123,6 +129,7 @@ class PassBook(object):
                     if len(i) > 2:
                         parser = self.__parse_old_csv
                         self.__data.append(parser(i))
+                        self.__info = old_info
                         break
 
                     if i[0] == '===':
@@ -134,3 +141,17 @@ class PassBook(object):
 
         except IOError:
             pass
+
+class PassBookManager(object):
+    @classmethod
+    def find(self):
+        # for csv
+        result = []
+        for file in glob.glob("*.csv"):
+            m = re.match('(\S+?)-(\S+)\.csv', file)
+            if not m or m[1] == "fundlog":
+                continue
+
+            print(m[1]+" "+m[2])
+            result.append((m[1], m[2]))
+        return result
