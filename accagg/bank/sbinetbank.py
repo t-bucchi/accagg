@@ -26,6 +26,8 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import Select
 
+from bs4 import BeautifulSoup
+
 from accagg.browser import Browser
 
 from time import sleep
@@ -48,7 +50,7 @@ class Aggregator(Aggregator):
                 'PASSWORD': '暗証番号'}
 
     def __decode_date(self, str):
-        match = re.match(r"^(\d{4})/(\d{2})/(\d{2})$", str)
+        match = re.match(r"^(\d+)年(\d+)月(\d+)日$", str)
         if match:
             y = int(match.group(1))
             m = int(match.group(2))
@@ -78,16 +80,19 @@ class Aggregator(Aggregator):
 
 #        import pdb; pdb.set_trace()
 
+        # ログイン
+        browser.find_element_by_link_text("ログイン").click()
+
         # enter
         browser.sync_send_keys((By.NAME, 'userName'), login_info['USRID'])
-        browser.sync_send_keys((By.NAME, 'loginPwdSet'), login_info['PASSWORD'])
+        browser.sync_send_keys((By.CSS_SELECTOR, 'input[type="password"]'), login_info['PASSWORD'])
 
         # Click login
-        browser.find_element_by_css_selector('input[alt="ログイン"]').click()
-#        browser.wait_for_title_changed()
+        browser.find_element_by_css_selector('button[type="submit"]').click()
+        browser.wait_for_title_changed()
 
         # 確認 (次へを押す)
-        browser.wait_element((By.CSS_SELECTOR, 'input.button-m01')).click()
+        browser.wait_element((By.LINK_TEXT, '次へ進む')).click()
 
         # ホーム
 
@@ -98,41 +103,57 @@ class Aggregator(Aggregator):
 
         # 円定期預金
         data = self.__get_time_deposit(browser)
-        result['time_deposit'] = data
+        if data:
+            result['time_deposit'] = data
 
         browser.quit()
         return result
 
     def __get_ordinary(self, browser):
         # 入出金明細
-        browser.find_element_by_id('main').find_element_by_link_text('入出金明細').click()
+        browser.find_element_by_link_text("入出金明細").click()
 
 #        import pdb; pdb.set_trace()
-        #
-        browser.find_element_by_id('CD020202VALUE05').click()
-        Select(browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdYearFrom"]')).select_by_index(0)
-        Select(browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdMonthFrom"]')).select_by_index(0)
-        Select(browser.find_element_by_css_selector('select[name="dsplyTrmSpcfdDayFrom"]')).select_by_index(0)
+
+        # Set "From" date
+        browser.wait_element((By.PARTIAL_LINK_TEXT, '絞り込み・並び替え')).click()
+        browser.find_element_by_xpath('//label[contains(text(),"期間指定")]').click()
+
+        e = browser.find_elements_by_css_selector('.m-formSelectDate')[0]
+        e.find_element_by_css_selector('p.m-select-year nb-simple-select').click()
+        e.find_elements_by_css_selector('p.m-select-year li')[1].click()
+        e.find_element_by_css_selector('p.m-select-month nb-simple-select').click()
+        e.find_elements_by_css_selector('p.m-select-month li')[1].click()
+        e.find_element_by_css_selector('p.m-select-day nb-simple-select').click()
+        e.find_elements_by_css_selector('p.m-select-day li')[1].click()
 
         # 表示
-        browser.find_element_by_css_selector('input[value="表示"]').click()
+        browser.find_elements_by_link_text('表示')[1].click()
+
+        # wait for update
+        browser.find_elements_by_partial_link_text('明細ダウンロード')
 
         data = []
 #        import pdb; pdb.set_trace()
 
         while True:
 
-            for item in browser.find_elements_by_css_selector('div.tableb02 table > tbody > tr'):
-#                print(item.get_attribute('innerHTML'))
-                cols = item.find_elements_by_tag_name('td')
-                c = [x.text for x in cols]
-#               print(c)
-                item = {'date' : self.__decode_date(c[0]),
-                        'deposit' : self._decode_amount(c[3])
-                        - self._decode_amount(c[2]),
-                        'desc' : c[1],
-                        'balance' : self._decode_amount(c[4])
+            soup = BeautifulSoup(browser.page_source, "html.parser")
+
+            for row in soup.select('.m-tblDetailsBox'):
+                date = row.select('.m-date')[0].string
+                desc = row.select('.m-subject span')[0].string
+                deposit = self._decode_amount(row.select('.m-txtEx')[0].string)
+                if row.select('.m-sign')[0].string == '出':
+                    deposit = -deposit
+                balance = self._decode_amount(row.select('.m-txtEx')[1].string)
+
+                item = {'date' : self.__decode_date(date),
+                        'deposit' : deposit,
+                        'desc' : desc,
+                        'balance' : balance
                 }
+
 #                print(item)
 
                 # Prepend.
@@ -144,47 +165,64 @@ class Aggregator(Aggregator):
             browser.implicitly_wait(0)
             es = 0
             try:
-                es = browser.find_element_by_link_text("次へ→")
+                es = browser.find_element_by_css_selector('.m-pager-prev')
             except NoSuchElementException:
 #                print("no entry")
                 break
             browser.implicitly_wait(180)
 
+            next_page = es.text
             es.click()
 
+            # wait for update
+            while browser.find_element_by_class_name('m-counter').text.split(' ')[0] != next_page:
+                sleep(0.1)
+
         # ホームへ戻る
-        browser.find_element_by_id('globalFoot').find_element_by_link_text('ホーム').click()
+        browser.find_element_by_link_text('ホーム').click()
+        # wait for display
+        browser.wait_for_title_changed()
+        browser.wait_for_loaded()
+        browser.wait_element((By.LINK_TEXT, '円普通預金'))
 
         return data
 
     def __get_time_deposit(self, browser):
-        # 入出金明細
-        actions = ActionChains(browser)
-        actions.move_to_element(browser.find_element_by_link_text('口座情報')).perform()
-        sleep(0.5)
-        browser.wait_for_item((By.LINK_TEXT, '残高照会（口座別）')).click()
-        browser.find_element_by_link_text('取引履歴').click()
 
-#        browser.find_element_by_link_text('残高照会（口座別）').click()
+        browser.implicitly_wait(0)
+        es = 0
+        try:
+            es = browser.find_element_by_link_text('円定期預金')
+        except NoSuchElementException:
+            print("no entry")
+            return None
+        browser.implicitly_wait(180)
+        es.click()
+
+        # 取引履歴
+        browser.find_element_by_link_text('取引履歴').click()
 
         data = []
         balance = 0
-        for item in browser.find_elements_by_css_selector('.tableb02 table > tbody > tr'):
-#                print(item.get_attribute('innerHTML'))
-            cols = item.find_elements_by_tag_name('td')
-            c = [x.text for x in cols]
-#               print(c)
 
-            if len(c) > 2:
-                # Top
-                deposit = self._decode_amount(c[3])
-                balance += deposit
-                item = {'date' : self.__decode_date(c[0]),
-                        'deposit' : deposit,
-                        'desc' : c[1],
-                        'balance' : balance
-                }
-#                print(item)
-                data.append(item)
+        soup = BeautifulSoup(browser.page_source, "html.parser")
+        for row in soup.select('tr'):
+            c = [x for x in row.select('th p')[0].stripped_strings]
+            date = self.__decode_date(c[0])
+            desc = ' '.join(c[1:])
+
+            c = [x for x in row.select('td .m-txtEx')[0].stripped_strings]
+            deposit = self._decode_amount(c[1])
+            if c[0] == '出':
+                deposit = -deposit
+
+            balance += deposit
+            item = {'date' : date,
+                    'deposit' : deposit,
+                    'desc' : desc,
+                    'balance' : balance
+            }
+#            print(item)
+            data.append(item)
 
         return data
