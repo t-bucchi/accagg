@@ -31,6 +31,7 @@ csv形式であれば、スクリプトで集計したり、表計算ソフト�
 * [THEO](/doc/bank-theo.md)
 * [WealthNavi for 住信SBIネット銀行](/doc/bank-wealthnavi-for-sbi.md)
 * [DCなび NRK](/doc/bank-dcnavi-nrk.md)
+* [楽天証券](/doc/bank-rakuten-sec.md)
 
 # 使い方
 ## 必要な環境
