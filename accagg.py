@@ -28,6 +28,8 @@ def aggregate(account):
     aggregator = accagg.bank.Factory.aggregator(account['BANKID'])
     all_data = aggregator.run(account)
     #print(all_data)
+    if not all_data:
+        return
 
     # old format
     if type(all_data) is dict:

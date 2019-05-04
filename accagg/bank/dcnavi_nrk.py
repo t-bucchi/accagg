@@ -21,6 +21,7 @@ from .abstract import Aggregator
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException
 from bs4 import BeautifulSoup
 
 from ..browser import Browser
@@ -81,6 +82,16 @@ class Aggregator(Aggregator):
         # Click login
         browser.wait_element((By.ID, 'nrkLoginLinkForNoAuto')).click()
         browser.wait_for_loaded()
+
+        # check maintenance
+        browser.implicitly_wait(0)
+        try:
+            browser.find_element_by_css_selector('.col1 table:nth-of-type(1)')
+        except NoSuchElementException:
+#            print("No service")
+            browser.quit()
+            return None
+        browser.implicitly_wait(180)
 
         # トップ
         browser.find_element_by_css_selector('.col1 table:nth-of-type(1)')
