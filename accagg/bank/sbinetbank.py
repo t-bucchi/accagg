@@ -58,6 +58,8 @@ class Aggregator(Aggregator):
             return date(y, m, d)
 
     def _decode_amount(self, str):
+        if str[0] != '-':
+            str = '0' + str
         return int('0' + str.replace(',', '').replace('円', ''))
 
     def wait_until_blocked(self, b):
@@ -97,26 +99,52 @@ class Aggregator(Aggregator):
         # ホーム
 
         result = {}
+#        import pdb; pdb.set_trace()
         # 普通預金
         data = self.__get_ordinary(browser)
-        result['ordinary'] = data
+        if data:
+            result.update(data)
 
         # 円定期預金
         data = self.__get_time_deposit(browser)
         if data:
-            result['time_deposit'] = data
+            result.update(data)
 
         browser.quit()
         return result
 
     def __get_ordinary(self, browser):
-        # 入出金明細
-        browser.find_element_by_link_text("入出金明細").click()
-
 #        import pdb; pdb.set_trace()
+        # 入出金明細
+        browser.wait_element((By.LINK_TEXT, "入出金明細")).click()
 
-        # Set "From" date
-        browser.wait_element((By.PARTIAL_LINK_TEXT, '絞り込み・並び替え')).click()
+        # 口座名取得
+        browser.wait_element((By.CSS_SELECTOR, '[nblabel="口座名"]'))
+        num = len(browser.find_elements_by_css_selector('[nblabel="口座名"] li'))
+        result = {}
+        for i in range(0, num):
+            e = browser.find_element_by_css_selector('[nblabel="口座名"]')
+            e.click()
+            e.find_elements_by_css_selector('li')[i].click()
+
+            name = 'ordinary'
+            if i > 0:
+                name = name + '_' + e.text
+            result[name] = self.__get_ordinary_sub(browser)
+
+        # print(result)
+
+        # ホームへ戻る
+        browser.find_element_by_link_text('ホーム').click()
+        # wait for display
+        browser.wait_for_title_changed()
+        browser.wait_for_loaded()
+        browser.wait_element((By.LINK_TEXT, '円普通預金'))
+
+        return result
+
+    def __get_ordinary_sub(self, browser):
+        browser.wait_element((By.PARTIAL_LINK_TEXT, '並び替え')).click()
         browser.find_element_by_xpath('//label[contains(text(),"期間指定")]').click()
 
         e = browser.find_elements_by_css_selector('.m-formSelectDate')[0]
@@ -178,13 +206,6 @@ class Aggregator(Aggregator):
             while browser.find_element_by_class_name('m-counter').text.split(' ')[0] != next_page:
                 sleep(0.1)
 
-        # ホームへ戻る
-        browser.find_element_by_link_text('ホーム').click()
-        # wait for display
-        browser.wait_for_title_changed()
-        browser.wait_for_loaded()
-        browser.wait_element((By.LINK_TEXT, '円普通預金'))
-
         return data
 
     def __get_time_deposit(self, browser):
@@ -202,6 +223,38 @@ class Aggregator(Aggregator):
         # 取引履歴
         browser.find_element_by_link_text('取引履歴').click()
 
+        # 口座名取得
+#        browser.wait_element((By.CSS_SELECTOR, '[nblabel="口座名"]'))
+        num = len(browser.find_elements_by_css_selector('[nblabel="口座名"] li'))
+        result = {}
+        for i in range(0, num):
+            # 口座切り替え
+            browser.wait_element((By.PARTIAL_LINK_TEXT, '並び替え')).click()
+            e = browser.find_element_by_css_selector('[nblabel="口座名"]')
+            e.click()
+            e.find_elements_by_css_selector('li')[i].click()
+            browser.find_element_by_partial_link_text('表示').click()
+
+            # 更新待ち
+            browser.wait_element((By.PARTIAL_LINK_TEXT, '並び替え'))
+
+            name = 'time_deposit'
+            if i > 0:
+                name = name + '_' + e.text
+            result[name] = self.__get_time_deposit_sub(browser)
+
+        # print(result)
+
+        # ホームへ戻る
+        browser.find_element_by_link_text('ホーム').click()
+        # wait for display
+        browser.wait_for_title_changed()
+        browser.wait_for_loaded()
+        browser.wait_element((By.LINK_TEXT, '円普通預金'))
+
+        return result
+
+    def __get_time_deposit_sub(self, browser):
         data = []
         balance = 0
 
