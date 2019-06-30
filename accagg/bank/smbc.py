@@ -44,7 +44,7 @@ class Aggregator(Aggregator):
                 'PASSWORD': '暗証番号1'}
 
     def __decode_date(self, str):
-        match = re.match(r"^([MTSH])(\d\d)\.(\d\d)\.(\d\d)$", str)
+        match = re.match(r"^([MTSHR])(\d\d)\.(\d\d)\.(\d\d)$", str)
         if match:
             y = int(match.group(2))
             m = int(match.group(3))
@@ -57,6 +57,8 @@ class Aggregator(Aggregator):
                 y += 1926 - 1
             elif match.group(1) == "H":
                 y += 1989 - 1
+            elif match.group(1) == "R":
+                y += 2019 - 1
                 return date(y, m, d)
 
     def run(self, login_info):
