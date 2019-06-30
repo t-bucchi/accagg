@@ -54,7 +54,12 @@ class Aggregator(Aggregator):
             return date(y, m, d)
 
     def _decode_amount(self, str):
-        return int('0' + str.replace(',', '').replace('円', ''))
+        str = str.replace(',', '').replace('円', '')
+        if str == '':
+            return 0
+        if str[0] != '-':
+            str = '0' + str
+        return int(str)
 
     def wait_until_blocked(self, b):
         for i in range(1, 100):
