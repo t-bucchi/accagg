@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .browser import Browser
 from bs4 import BeautifulSoup
 
 import urllib.parse
@@ -25,15 +24,26 @@ import urllib.request
 import json
 import time
 
-from time import sleep
-
 import re
 from datetime import date
 
 class Fund:
-    def _decode_date(self, val):
+    def __decode_date(self, val):
         t = time.gmtime(val/1000)
         return date(t.tm_year, t.tm_mon, t.tm_mday)
+
+    def __decode_strdate(self, str):
+        match = re.match(r"(\d{4})年(\d{2})月(\d{2})日", str)
+        if match:
+            y = int(match.group(1))
+            m = int(match.group(2))
+            d = int(match.group(3))
+            return date(y, m, d)
+
+    def __decode_amount(self, str):
+        if str[0] != '-':
+            str = '0' + str
+        return int('0' + str.replace(',', ''))
 
     def search(self, name):
         name = name.translate({ord(u'('): u'（', ord(u')'): u'）'})
@@ -102,14 +112,34 @@ class Fund:
         data = json.loads(js)
 #        print(js)
 #        print(data)
-#        print(self._decode_date(data['data'][-1][0]))
+#        print(self.__decode_date(data['data'][-1][0]))
         result = []
         for i in data['data']:
             result.append({
-                'date': self._decode_date(i[0]),
+                'date': self.__decode_date(i[0]),
                 'price': i[1]
             })
         return result
+
+    def getinfo(self, id):
+        URL = "https://www.rakuten-sec.co.jp/web/fund/detail/?ID="+id
+        # print(URL)
+
+        # open URL
+        req = urllib.request.Request(URL)
+        with urllib.request.urlopen(req) as res:
+            body = res.read()
+        # print(body)
+        soup = BeautifulSoup(body, "html.parser")
+        # import pdb; pdb.set_trace()
+
+        info = {}
+        info['id'] = id
+        info['name'] = soup.find('h1').text
+        info['class'] = soup.find(class_='fund-type').text
+        info['price'] = self.__decode_amount(soup.find(class_='doc-yen-01').text)
+        info['lastdate'] = self.__decode_strdate(soup.find(class_='box-fund-label').p.text)
+        return info
 
 if __name__ == '__main__':
     fund = Fund()
@@ -117,3 +147,5 @@ if __name__ == '__main__':
     print(id)
     log = fund.price_log("JP90C0003PR7")
     print(log)
+    info = fund.getinfo("JP90C0003PR7")
+    print(info)
