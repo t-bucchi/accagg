@@ -61,12 +61,23 @@ def aggregate(account):
     for data in all_data:
         history = data.pop('history')
         passbook = PassBook(account['name'], data)
-        if data['unit'] != 'Yen' and not 'unitid' in passbook.info:
-            ids = fund.search(data['unit'])
-            if len(ids) == 1:
-                data['unitid'] = ids[0]['id']
+        if data['unit'] != 'Yen':
+            if 'unitid' in passbook.info:
+                data['unitid'] = passbook.info['unitid']
             else:
-                print("some ids found.\n")
+                print("Getting fund id...")
+                ids = fund.search(data['unit'])
+                if len(ids) == 1:
+                    data['unitid'] = ids[0]['id']
+                else:
+                    print("some ids found.\n")
+
+            if 'unitid' in data:
+                print("Update fund info...")
+                info = fund.getinfo(data['unitid'])
+                data['class'] = info['class']
+                data['price'] = info['price']
+                data['lastdate'] = info['lastdate']
 
         data['bankid'] = aggregator.bankid()
         data['bankname'] = aggregator.description()
