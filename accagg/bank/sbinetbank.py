@@ -63,11 +63,14 @@ class Aggregator(Aggregator):
         return int('0' + str.replace(',', '').replace('円', ''))
 
     def wait_until_blocked(self, b):
+        b.implicitly_wait(0)
         for i in range(1, 20):
-            e = b.wait_for_item((By.CSS_SELECTOR, '.block-ui-container'))
-            print(e.size)
-            if e.size['height'] == 0:
-                break
+            try:
+                print('try:%d' % i)
+                es = b.find_element_by_class_name('loadingServer')
+            except NoSuchElementException:
+                b.implicitly_wait(180)
+                return
             sleep(0.5)
 
     def run(self, login_info):
@@ -116,6 +119,8 @@ class Aggregator(Aggregator):
     def __get_ordinary(self, browser):
 #        import pdb; pdb.set_trace()
         # 入出金明細
+        self.wait_until_blocked(browser)
+        sleep(0.5)
         browser.wait_element((By.LINK_TEXT, "入出金明細")).click()
 
         # 口座名取得
@@ -220,6 +225,8 @@ class Aggregator(Aggregator):
             return None
         browser.implicitly_wait(180)
         es.click()
+        self.wait_until_blocked(browser)
+        sleep(0.5)
 
         # 取引履歴
         browser.find_element_by_link_text('取引履歴').click()
