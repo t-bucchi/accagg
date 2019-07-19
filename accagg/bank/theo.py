@@ -103,9 +103,11 @@ class Aggregator(Aggregator):
             date = self._decode_date(i['date'])
 
             item = {'date' : date,
-                    'deposit' : int(i['jpy']['depositAmount']) - deposit,
+                    'amount' : int(i['jpy']['depositAmount']),
+                    'payout' : int(i['jpy']['depositAmount']) - deposit,
                     'desc' : '',
-                    'balance' : int(i['jpy']['marketAmount'])
+                    'balance' : int(i['jpy']['marketAmount']),
+                    'price': 1
             }
             data.append(item)
             deposit = int(i['jpy']['depositAmount'])
@@ -114,4 +116,13 @@ class Aggregator(Aggregator):
 #            item['balance'] = balance
 
         browser.quit()
-        return {'fund': data}
+        return [{
+            'name': 'THEO',
+            'unit': 'Fund',
+            'account': '特定',
+            'class': 'バランス',
+            'price': 1,
+            'payout': data[-1]['amount'],
+            'lastdate': data[-1]['date'],
+            'history': data,
+        }]

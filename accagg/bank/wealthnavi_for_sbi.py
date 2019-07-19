@@ -81,9 +81,10 @@ class Aggregator(Aggregator):
             c = [x.string for x in item.select(".value")]
 
             item = {'date' : date,
-                    'deposit' : int(c[1]),
+                    'amount' : int(c[1]),
                     'desc' : '',
-                    'balance' : int(float(c[0]))
+                    'balance' : int(float(c[0])),
+                    'price' : 1,
             }
 
             # Prepend.
@@ -91,14 +92,19 @@ class Aggregator(Aggregator):
             # Passbook order is ascending
             data.insert(0, item)
 
-        deposit = 0
+        last_amount = 0
         for i in data:
-            if deposit != i['deposit']:
-                tmp = deposit
-                deposit = i['deposit']
-                i['deposit'] -= tmp
-            else:
-                i['deposit'] = 0
+            i['payout'] = i['amount'] - last_amount
+            last_amount = i['amount']
 
         browser.quit()
-        return {'fund': data}
+        return [{
+            'name': 'WealthNavi',
+            'unit': 'Fund',
+            'account': '特定',
+            'class': 'バランス',
+            'price': 1,
+            'payout': data[-1]['amount'],
+            'lastdate': data[-1]['date'],
+            'history': data,
+        }]

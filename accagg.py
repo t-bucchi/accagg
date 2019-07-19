@@ -61,8 +61,10 @@ def aggregate(account):
     for data in all_data:
         history = data.pop('history')
         passbook = PassBook(account['name'], data)
-        if data['unit'] != 'Yen':
-            if 'unitid' in passbook.info:
+        if data['unit'] != 'Yen' and data['unit'] != 'Fund':
+            if 'unitid' in data:
+                pass
+            elif 'unitid' in passbook.info:
                 data['unitid'] = passbook.info['unitid']
             else:
                 print("Getting fund id...")
@@ -76,14 +78,14 @@ def aggregate(account):
                 print("Update fund info...")
                 info = fund.getinfo(data['unitid'])
                 data['class'] = info['class']
-                data['price'] = info['price']
+                data['price'] = info['price'] / 10000
                 data['lastdate'] = info['lastdate']
 
         data['bankid'] = aggregator.bankid()
         data['bankname'] = aggregator.description()
 
         passbook.add(history, info = data)
-        if data['unit'] != 'Yen' and not 'unitid' in passbook.info:
+        if data['unit'] != 'Yen' and data['unit'] != 'Fund' and not 'unitid' in passbook.info:
             ids = fund.search(data['unit'])
             if len(ids) == 1:
                 data['unitid'] = ids[0]['id']
