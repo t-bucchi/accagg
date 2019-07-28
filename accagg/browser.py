@@ -41,7 +41,8 @@ class Browser(object):
         # 1 - Allow all images
         # 2 - Block all images
         # 3 - Block 3rd party images
-        profile.set_preference("permissions.default.image", 2)
+        profile.set_preference('permissions.default.image', 2)
+        profile.set_preference('gfx.downloadable_fonts.enabled', False)
         return Browser(webdriver.Firefox(firefox_profile = profile))
 
     def download(self, url):
