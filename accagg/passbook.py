@@ -49,6 +49,10 @@ class PassBook(object):
     def info(self):
         return self.__info
 
+    @property
+    def data(self):
+        return self.__data
+
     def add(self, items, info = None):
         if len(self.__data) == 0:
             self.__data = items
@@ -148,10 +152,10 @@ class PassBookManager(object):
         # for csv
         result = []
         for file in glob.glob("*.csv"):
-            m = re.match('(\S+?)-(\S+)\.csv', file)
+            m = re.match('(.+?)-(.+)\.csv', file)
             if not m or m[1] == "fundlog":
                 continue
 
-            print(m[1]+" "+m[2])
+            # print(m[1]+" "+m[2])
             result.append((m[1], m[2]))
         return result
