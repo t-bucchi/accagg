@@ -34,3 +34,19 @@ class PasswordManager:
         for item in self.__parser.items(name):
             items[item[0]] = item[1]
         return items
+
+    def enable(self, name):
+        if not name in self.__parser.sections():
+            return
+        self.__parser.remove_option(name, 'disabled')
+        return
+
+    def disable(self, name):
+        if not name in self.__parser.sections():
+            return
+        self.__parser[name]['disabled'] = '1'
+        return
+
+    def store(self):
+        with open(self.__filename, 'w') as f:
+            self.__parser.write(f)
