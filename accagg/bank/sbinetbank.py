@@ -126,10 +126,11 @@ class Aggregator(Aggregator):
             e = browser.find_element_by_css_selector('[nblabel="口座名"]')
             e.click()
             e.find_elements_by_css_selector('li')[i].click()
+            subname = e.find_elements_by_css_selector('li')[i].text
 
             name = 'ordinary'
             if i > 0:
-                name = name + '_' + e.text
+                name = name + '_' + subname
             result[name] = self.__get_ordinary_sub(browser)
 
         # print(result)
