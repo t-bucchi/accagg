@@ -52,7 +52,13 @@ class Rakuten(Scraper):
         return int('0' + str.replace(',', ''))
 
     def search(self, name):
-        name = name.translate({ord(u'('): u'（', ord(u')'): u'）', ord(u' '): u'', ord(u'　'): u''})
+        table = str.maketrans({
+            '(': '（',
+            ')': '）',
+            '/': '／',
+            ' ': '',
+            '　': ''})
+        name = name.translate(table)
         URL = "https://www.rakuten-sec.co.jp/web/fund/find/search/result.html?condition31=%E3%83%95%E3%82%A1%E3%83%B3%E3%83%89%E5%90%8D%E7%A7%B0like*{}*"
         URL = URL.format(urllib.parse.quote(name))
         # print(URL)

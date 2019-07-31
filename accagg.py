@@ -70,10 +70,12 @@ def aggregate(account):
             else:
                 print("Getting fund id...")
                 ids = fund.search(data['unit'])
-                if len(ids) == 1:
+                if ids == None:
+                    print("%s is not found." % data['unit'])
+                elif len(ids) == 1:
                     data['unitid'] = ids[0]['id']
                 else:
-                    print("some ids found.\n")
+                    print("some ids found.")
 
             if 'unitid' in data:
                 print("Update fund info...")
@@ -97,7 +99,7 @@ def aggregate(account):
     # Remove cancelled account
     names = [data['name'] for data in all_data]
     for i in [i[1] for i in PassBookManager.find() if i[0] == account['name']]:
-        if i in names:
+        if i in names or i in i.replace('/', '／'):
             continue
 
         passbook = PassBook(account['name'], i)

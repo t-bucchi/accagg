@@ -21,6 +21,7 @@ import csv
 import datetime
 import glob
 import re
+import copy
 
 class PassBook(object):
 
@@ -30,7 +31,9 @@ class PassBook(object):
         if type(bankinfo) is str:
             self.__info = {'name': bankinfo}
         else:
-            self.__info = bankinfo
+            self.__info = copy.deepcopy(bankinfo)
+
+        self.__info['name'] = self.__info['name'].replace('/','／')
         self.load()
 
     @property
@@ -54,12 +57,13 @@ class PassBook(object):
         return self.__data
 
     def add(self, items, info = None):
+        if info:
+            self.__info = copy.deepcopy(info)
+            self.__info['name'] = self.__info['name'].replace('/','／')
+
         if len(self.__data) == 0:
             self.__data = items
             return
-
-        if info:
-            self.__info = info
 
         new_data = []
         while len(self.__data) > 0 and len(items) > 0:

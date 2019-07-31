@@ -24,6 +24,7 @@ import urllib.parse
 import urllib.request
 import json
 import time
+import unicodedata
 
 import re
 from datetime import date
@@ -59,7 +60,9 @@ class Minkabu(Scraper):
         return int('0' + str.replace(',', '').replace('円', ''))
 
     def search(self, name):
-        name = name.translate({ord(u'('): u'（', ord(u')'): u'）'})
+        # 半角カナ→全角変換
+        name = unicodedata.normalize('NFKC', name)
+        # name = name.translate({ord(u'('): u'（', ord(u')'): u'）'})
         URL = "https://itf.minkabu.jp/search/result?keywords={}"
         URL = URL.format(urllib.parse.quote(name))
         # print(URL)
