@@ -20,9 +20,10 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import accagg.bank
-from accagg.passbook import PassBook
+from accagg.passbook import PassBook, PassBookManager
 from accagg.passwordmanager import PasswordManager
 from accagg.fund import Fund
+import datetime
 
 def aggregate(account):
     aggregator = accagg.bank.Factory.aggregator(account['BANKID'])
@@ -91,6 +92,28 @@ def aggregate(account):
                 data['unitid'] = ids[0]['id']
             else:
                 print("some ids found.\n")
+        passbook.save()
+
+    # Remove cancelled account
+    names = [data['name'] for data in all_data]
+    for i in [i[1] for i in PassBookManager.find() if i[0] == account['name']]:
+        if i in names:
+            continue
+
+        passbook = PassBook(account['name'], i)
+        if passbook.data[-1]['balance'] == 0:
+            continue
+
+        print("%s:%s had been already cancelled. set 'balance' to 0"
+            % (data['name'], i))
+        passbook.add([{
+            'date': datetime.date.today(),
+            'price': 0,
+            'amount': 0,
+            'balance': 0,
+            'payout': 0,
+            'desc': 'CANCELLED (AUTO ADDED)',
+        }])
         passbook.save()
 
 password = PasswordManager()
