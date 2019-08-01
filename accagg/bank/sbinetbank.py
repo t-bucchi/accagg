@@ -101,17 +101,17 @@ class Aggregator(Aggregator):
 
         # ホーム
 
-        result = {}
+        result = []
 #        import pdb; pdb.set_trace()
         # 普通預金
         data = self.__get_ordinary(browser)
         if data:
-            result.update(data)
+            result.extend(data)
 
         # 円定期預金
         data = self.__get_time_deposit(browser)
         if data:
-            result.update(data)
+            result.extend(data)
 
         browser.quit()
         return result
@@ -121,22 +121,29 @@ class Aggregator(Aggregator):
         # 入出金明細
         self.wait_until_blocked(browser)
         sleep(0.5)
-        browser.wait_element((By.LINK_TEXT, "入出金明細")).click()
+        e = browser.wait_element((By.LINK_TEXT, "入出金明細"))
+        browser.execute_script('arguments[0].click();', e)
 
         # 口座名取得
         browser.wait_element((By.CSS_SELECTOR, '[nblabel="口座名"]'))
         num = len(browser.find_elements_by_css_selector('[nblabel="口座名"] li'))
-        result = {}
+        result = []
         for i in range(0, num):
             e = browser.find_element_by_css_selector('[nblabel="口座名"]')
             e.click()
-            e.find_elements_by_css_selector('li')[i].click()
-            subname = e.find_elements_by_css_selector('li')[i].text
+            e = e.find_elements_by_css_selector('li')[i]
+            subname = e.text
+            e.click()
 
             name = 'ordinary'
             if i > 0:
                 name = name + '_' + subname
-            result[name] = self.__get_ordinary_sub(browser)
+            result.append({
+                'name': name,
+                'unit': 'Yen',
+                'account': '普通',
+                'history': self.__get_ordinary_sub(browser),
+            })
 
         # print(result)
 
@@ -183,7 +190,9 @@ class Aggregator(Aggregator):
                 balance = self._decode_amount(row.select('.m-txtEx')[1].string)
 
                 item = {'date' : self.__decode_date(date),
-                        'deposit' : deposit,
+                        'price': 1,
+                        'amount' : deposit,
+                        'payout' : deposit,
                         'desc' : desc,
                         'balance' : balance
                 }
@@ -234,13 +243,15 @@ class Aggregator(Aggregator):
         # 口座名取得
 #        browser.wait_element((By.CSS_SELECTOR, '[nblabel="口座名"]'))
         num = len(browser.find_elements_by_css_selector('[nblabel="口座名"] li'))
-        result = {}
+        result = []
         for i in range(0, num):
             # 口座切り替え
             browser.wait_element((By.PARTIAL_LINK_TEXT, '並び替え')).click()
             e = browser.find_element_by_css_selector('[nblabel="口座名"]')
             e.click()
-            e.find_elements_by_css_selector('li')[i].click()
+            e = e.find_elements_by_css_selector('li')[i]
+            subname = e.text
+            e.click()
             browser.find_element_by_partial_link_text('表示').click()
 
             # 更新待ち
@@ -248,8 +259,13 @@ class Aggregator(Aggregator):
 
             name = 'time_deposit'
             if i > 0:
-                name = name + '_' + e.text
-            result[name] = self.__get_time_deposit_sub(browser)
+                name = name + '_' + subname
+            result.append({
+                'name': name,
+                'unit': 'Yen',
+                'account': '普通',
+                'history': self.__get_time_deposit_sub(browser),
+            })
 
         # print(result)
 
@@ -279,7 +295,9 @@ class Aggregator(Aggregator):
 
             balance += deposit
             item = {'date' : date,
-                    'deposit' : deposit,
+                    'price': 1,
+                    'amount' : deposit,
+                    'payout' : deposit,
                     'desc' : desc,
                     'balance' : balance
             }

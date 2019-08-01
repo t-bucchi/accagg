@@ -119,13 +119,13 @@ class Aggregator(Aggregator):
         # ログイン後画面
 
         ## 明細照会をクリック
-        browser.find_element_by_link_text('口座一覧・残高照会').click()
+        browser.wait_element((By.LINK_TEXT, '口座一覧・残高照会')).click()
         browser.wait_for_loaded()
 
         # 残高照会画面
 
         count = len(browser.find_elements_by_css_selector(u'input[value="明細照会"]'))
-        result = {}
+        result = []
         for i in range(count):
             browser.find_elements_by_css_selector(u'input[value="明細照会"]')[i].click()
             browser.wait_for_loaded()
@@ -135,12 +135,12 @@ class Aggregator(Aggregator):
                 # 普通預金
                 data = self.__get_ordinary(browser)
 #                print(data)
-                result['ordinary'] = data
+                result.append(data)
             elif h1 == '定期預金明細照会':
                 # 定期預金
                 data = self.__get_time_deposit(browser)
 #                print(data)
-                result['time_deposit'] = data
+                result.append(data)
 
         browser.quit()
         return result
@@ -159,9 +159,12 @@ class Aggregator(Aggregator):
                 if '日付' in item.text:
                     continue
                 cols = item.find_elements_by_tag_name('td')
+                deposit = self.__decode_amount(cols[3].text) \
+                            - self.__decode_amount(cols[2].text)
                 item = {'date' : self.__decode_date(cols[0].text),
-                        'deposit' : self.__decode_amount(cols[3].text)
-                        - self.__decode_amount(cols[2].text),
+                        'price' : 1,
+                        'amount' : deposit,
+                        'payout' : deposit,
                         'desc' : cols[1].text,
                         'balance' : self.__decode_amount(cols[4].text)
                 }
@@ -178,7 +181,11 @@ class Aggregator(Aggregator):
         # scroll to bottom
         browser.execute_script("window.scrollTo(0, document.body.scrollHeight);");
         browser.find_elements_by_xpath('//a[contains(./text(), "口座一覧・残高照会")]')[-1].click()
-        return data
+        return {
+            'name': 'ordinary',
+            'unit': 'Yen',
+            'account': '普通',
+            'history': data}
 
     def __get_time_deposit(self, browser):
         # 預金明細
@@ -208,6 +215,7 @@ class Aggregator(Aggregator):
         current_date = browser.find_element_by_css_selector('p.TimeStamp').text
         current_date = self.__decode_date(re.sub(r'時点.*', '', current_date))
 
+        # 解約明細取得
         while True:
             item = {}
             deposit = 0
@@ -230,7 +238,9 @@ class Aggregator(Aggregator):
                 if pos == 'top':
                     deposit = self.__decode_amount(cols[4].text)
                     item = {'date' : self.__decode_date(cols[2].text),
-                            'deposit' : deposit,
+                            'price' : 1,
+                            'payout' : deposit,
+                            'amount' : deposit,
                             'desc' : cols[1].text,
                             'balance' : 0
                     }
@@ -241,13 +251,17 @@ class Aggregator(Aggregator):
                     if end_date <= current_date:
                         interest = self.__decode_amount(cols[2].text)
                         item = {'date' : end_date,
-                                'deposit' : interest,
+                                'price' : 1,
+                                'payout' : interest,
+                                'amount' : interest,
                                 'desc' : '',
                                 'balance' : 0
                         }
                         sub_data.append(item)
                         item = {'date' : end_date,
-                                'deposit' : -deposit - interest,
+                                'price' : 1,
+                                'amount' : -deposit - interest,
+                                'payout' : -deposit - interest,
                                 'desc' : '',
                                 'balance' : 0
                         }
@@ -288,7 +302,9 @@ class Aggregator(Aggregator):
                 if top:
                     deposit = self.__decode_amount(cols[4].text)
                     item = {'date' : self.__decode_date(cols[2].text),
-                            'deposit' : deposit,
+                            'price' : 1,
+                            'amount' : deposit,
+                            'payout' : deposit,
                             'desc' : cols[1].text,
                             'balance' : 0
                     }
@@ -297,7 +313,9 @@ class Aggregator(Aggregator):
                     end_data = self.__decode_date(cols[0].text)
                     if end_date <= current_date:
                         item = {'date' : self.__decode_date(cols[0].text),
-                                'deposit' : -deposit,
+                                'price' : 1,
+                                'amount' : -deposit,
+                                'payout' : -deposit,
                                 'desc' : '',
                                 'balance' : 0
                         }
@@ -313,7 +331,11 @@ class Aggregator(Aggregator):
         data = sorted(data, key=lambda item: item['date'])
         balance = 0
         for item in data:
-            balance += item['deposit']
+            balance += item['payout']
             item['balance'] = balance
 
-        return data
+        return {
+            'name': 'time_deposit',
+            'unit': 'Yen',
+            'account': '普通',
+            'history': data}

@@ -102,19 +102,25 @@ class Aggregator(Aggregator):
         # 先頭行を抜いて csv.reader に渡す
         rows = csv.reader(resp.decode("shift_jis").split("\r\n")[1:])
 
-        all_data = {}
         data = []
         for row in rows:
             if len(row) != 5:
                 continue
-            item = {'date' : self.__decode_date(row[0]),
-                    'deposit' : int('0' + row[2]) - int('0' + row[1]),
-                    'desc' : row[3],
-                    'balance' : int('0' + row[4])
+            deposit = int('0' + row[2]) - int('0' + row[1])
+            item = {'date': self.__decode_date(row[0]),
+                    'price': 1,
+                    'amount': deposit,
+                    'payout': deposit,
+                    'desc': row[3],
+                    'balance': int('0' + row[4])
             }
             #print('\t'.join(row))
             data.append(item)
 
-        all_data['ordinary'] = data
         browser.quit()
-        return all_data
+        return [{
+            'name': 'ordinary',
+            'unit': 'Yen',
+            'account': '普通',
+            'history': data,
+        }]
