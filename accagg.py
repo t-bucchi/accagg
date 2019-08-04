@@ -25,6 +25,9 @@ from accagg.passwordmanager import PasswordManager
 from accagg.fund import Fund
 import datetime
 
+class AggregaterResultError(Exception):
+    pass
+
 def aggregate(account):
     aggregator = accagg.bank.Factory.aggregator(account['BANKID'])
     all_data = aggregator.run(account)
@@ -34,31 +37,11 @@ def aggregate(account):
 
     # old format
     if type(all_data) is dict:
-        # Convert to new format
-
-        new_data = []
-        for name, data in all_data.items():
-            meta = {
-                'name': name,
-                'unit': 'Yen',
-                'account': '普通',
-                'history': []}
-            for i in data:
-                item = {
-                    'date': i['date'],
-                    'price': 1,
-                    'amount': i['deposit'],
-                    'payout': i['deposit'],
-                    'balance': i['balance'],
-                    'desc': i['desc'],
-                }
-                meta['history'].append(item)
-            new_data.append(meta)
-        all_data = new_data
+        # Old format is no longer supported
+        raise AggregaterResultError()
 
     fund = Fund()
 
-    # new format
     for data in all_data:
         history = data.pop('history')
         passbook = PassBook(account['name'], data)
