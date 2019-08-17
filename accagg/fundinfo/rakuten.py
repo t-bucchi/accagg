@@ -56,6 +56,7 @@ class Rakuten(Scraper):
             '(': '（',
             ')': '）',
             '/': '／',
+            '-': '－',
             ' ': '',
             '　': ''})
         name = name.translate(table)

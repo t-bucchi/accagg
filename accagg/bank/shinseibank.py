@@ -261,8 +261,8 @@ class Aggregator(Aggregator):
         # 投資信託
         # import pdb; pdb.set_trace()
 
-        ## 「投資信託のお取引」クリック
-        browser.find_element_by_link_text('投資信託のお取引').click()
+        ## 「投資信託」クリック
+        browser.find_element_by_link_text('投資信託').click()
         browser.wait_for_loaded()
         self.wait_until_blocked(browser, '.block-ui-overlay')
         sleep(0.3)

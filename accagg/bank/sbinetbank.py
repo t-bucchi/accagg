@@ -96,8 +96,13 @@ class Aggregator(Aggregator):
         browser.find_element_by_css_selector('button[type="submit"]').click()
         browser.wait_for_title_changed()
 
-        # 確認 (次へを押す)
-        browser.wait_element((By.LINK_TEXT, '次へ進む')).click()
+        while not '住信' in browser.title:
+            sleep(0.1)
+
+        if '重要なお知らせ' in browser.title:
+            # 確認 (次へを押す)
+            browser.wait_element((By.LINK_TEXT, '次へ進む')).click()
+            browser.wait_for_loaded()
 
         # ホーム
 
