@@ -61,7 +61,7 @@ class Aggregator(Aggregator):
                 y += 2019 - 1
                 return date(y, m, d)
 
-    def run(self, login_info):
+    def run(self, login_info, lastdate):
         URL = "https://direct.smbc.co.jp/aib/aibgsjsw5001.jsp"
 
         #browser = webdriver.Chrome()

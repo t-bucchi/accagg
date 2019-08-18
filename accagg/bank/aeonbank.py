@@ -54,7 +54,7 @@ class Aggregator(Aggregator):
     def __decode_amount(self, str):
         return int('0' + str.replace(',', '').replace('円', ''))
 
-    def run(self, login_info):
+    def run(self, login_info, lastdate):
         URL = "https://www.aeonbank.co.jp/login/ib_02.html"
 
         browser = Browser.firefox()

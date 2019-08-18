@@ -61,7 +61,7 @@ class Aggregator(Aggregator):
 #        print(str)
         return int('0' + re.sub(r'[,\-円口]', '', str))
 
-    def run(self, login_info):
+    def run(self, login_info, lastdate):
         URL = "https://www.rakuten-sec.co.jp/"
 
         browser = Browser.firefox()

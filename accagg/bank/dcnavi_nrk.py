@@ -64,7 +64,7 @@ class Aggregator(Aggregator):
             name = 'ＤＣ日本株式インデックスファンドＬ'
         return name
 
-    def run(self, login_info):
+    def run(self, login_info, lastdate):
         URL = "https://www.j-pec.co.jp/dcnavi/u010login/g00101.do"
 
         profile = FirefoxProfile()

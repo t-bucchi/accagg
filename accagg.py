@@ -29,8 +29,17 @@ class AggregaterResultError(Exception):
     pass
 
 def aggregate(account):
+
+    lastdate = datetime.date.min
+    books = PassBookManager.find(account['name'])
+    for book in books:
+        pb = PassBook(*book)
+        if pb.lastdate:
+            if lastdate < pb.lastdate:
+                lastdate = pb.lastdate
+
     aggregator = accagg.bank.Factory.aggregator(account['BANKID'])
-    all_data = aggregator.run(account)
+    all_data = aggregator.run(account, lastdate)
     #print(all_data)
     if not all_data:
         return
@@ -44,6 +53,8 @@ def aggregate(account):
 
     for data in all_data:
         history = data.pop('history')
+        if len(history) == 0:
+            continue
         passbook = PassBook(account['name'], data)
         if data['unit'] != 'Yen' and data['unit'] != 'Fund':
             if 'unitid' in data:
@@ -69,6 +80,9 @@ def aggregate(account):
 
         data['bankid'] = aggregator.bankid()
         data['bankname'] = aggregator.description()
+
+        if not 'lastdate' in data:
+            data['lastdate'] = history[-1]['date']
 
         passbook.add(history, info = data)
         if data['unit'] != 'Yen' and data['unit'] != 'Fund' and not 'unitid' in passbook.info:

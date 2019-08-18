@@ -36,5 +36,5 @@ class Aggregator(metaclass = ABCMeta):
         pass
 
     @abstractmethod
-    def run(self, login_info):
+    def run(self, login_info, lastdate):
         pass

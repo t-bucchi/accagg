@@ -73,7 +73,7 @@ class Aggregator(Aggregator):
                 return
             sleep(0.5)
 
-    def run(self, login_info):
+    def run(self, login_info, lastdate):
         URL = "https://www.netbk.co.jp"
 
         browser = Browser.firefox()

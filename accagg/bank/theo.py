@@ -53,7 +53,7 @@ class Aggregator(Aggregator):
             d = int(match.group(3))
             return date(y, m, d)
 
-    def run(self, login_info):
+    def run(self, login_info, lastdate):
         URL = "https://app.theo.blue/account/login"
 
         browser = Browser.firefox()

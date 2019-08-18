@@ -24,8 +24,21 @@ import re
 import copy
 
 class PassBook(object):
+    '''
+    口座の取引履歴を保持するクラス。
+    1つのインスタンスが1つの口座種別に対応する。例えば同じ銀行でも普通預金と定期預金は
+    別々のインスタンスで管理する。
+    '''
 
     def __init__(self, accountid, bankinfo):
+        '''
+        Parameters
+        ----------
+        accountid : str
+            アカウント名
+        bankinfo : str or dict
+            口座種別を表す文字列、もしくは {'name': 口座種別} を含んだ dict
+        '''
         self.__data = []
         self.__accountid = accountid
         if type(bankinfo) is str:
@@ -49,12 +62,22 @@ class PassBook(object):
         return self.__info['account']
 
     @property
+    def lastdate(self):
+        if 'lastdate' in self.__info:
+            return self.__info['lastdate']
+        return None
+
+    @property
     def info(self):
         return self.__info
 
     @property
     def data(self):
         return self.__data
+
+    @classmethod
+    def __str2date(self, str):
+        return datetime.date(*[int(x) for x in str.split('-')])
 
     def add(self, items, info = None):
         if info:
@@ -106,8 +129,7 @@ class PassBook(object):
                                  i['balance'], i['desc']]);
 
     def __parse_csv(self, cols):
-        date = cols[0].split('-')
-        return {'date': datetime.date(int(date[0]), int(date[1]), int(date[2])),
+        return {'date': self.__str2date(cols[0]),
                 'price': cols[1],
                 'amount': cols[2],
                 'payout': cols[3],
@@ -115,8 +137,7 @@ class PassBook(object):
                 'desc': cols[5]}
 
     def __parse_old_csv(self, cols):
-        date = cols[0].split('-')
-        return {'date': datetime.date(int(date[0]), int(date[1]), int(date[2])),
+        return {'date': self.__str2date(cols[0]),
                 'price': 1,
                 'amount': cols[1],
                 'payout': cols[1],
@@ -150,16 +171,20 @@ class PassBook(object):
         except IOError:
             pass
 
+        if 'lastdate' in self.__info:
+            self.__info['lastdate'] = self.__str2date(self.__info['lastdate'])
+
 class PassBookManager(object):
     @classmethod
-    def find(self):
+    def find(self, name=None):
         # for csv
         result = []
         for file in glob.glob("*.csv"):
             m = re.match('(.+?)-(.+)\.csv', file)
             if not m or m[1] == "fundlog":
                 continue
-
+            if name and name != m[1]:
+                continue
             # print(m[1]+" "+m[2])
             result.append((m[1], m[2]))
         return result

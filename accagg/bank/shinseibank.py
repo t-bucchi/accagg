@@ -79,7 +79,7 @@ class Aggregator(Aggregator):
             sleep(0.1)
         sleep(0.1)
 
-    def run(self, login_info):
+    def run(self, login_info, lastdate):
         URL = "https://bk.shinseibank.com/SFC/apps/services/www/SFC/desktopbrowser/default/login?mode=1&forward=SA0001"
 
 #        import pdb; pdb.set_trace()
