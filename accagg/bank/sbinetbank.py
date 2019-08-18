@@ -76,6 +76,8 @@ class Aggregator(Aggregator):
     def run(self, login_info, lastdate):
         URL = "https://www.netbk.co.jp"
 
+        self.__lastdate = lastdate
+
         browser = Browser.firefox()
         browser.implicitly_wait(180)
 
@@ -187,14 +189,17 @@ class Aggregator(Aggregator):
             soup = BeautifulSoup(browser.page_source, "html.parser")
 
             for row in soup.select('.m-tblDetailsBox'):
-                date = row.select('.m-date')[0].string
+                date = self.__decode_date(row.select('.m-date')[0].string)
+                if self.__lastdate > date:
+                    return data
+
                 desc = row.select('.m-subject span')[0].string
                 deposit = self._decode_amount(row.select('.m-txtEx')[0].string)
                 if row.select('.m-sign')[0].string == '出':
                     deposit = -deposit
                 balance = self._decode_amount(row.select('.m-txtEx')[1].string)
 
-                item = {'date' : self.__decode_date(date),
+                item = {'date' : date,
                         'price': 1,
                         'amount' : deposit,
                         'payout' : deposit,
@@ -291,6 +296,9 @@ class Aggregator(Aggregator):
         for row in soup.select('tr'):
             c = [x for x in row.select('th p')[0].stripped_strings]
             date = self.__decode_date(c[0])
+            if self.__lastdate > date:
+                break
+
             desc = ' '.join(c[1:])
 
             c = [x for x in row.select('td .m-txtEx')[0].stripped_strings]

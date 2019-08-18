@@ -56,6 +56,7 @@ class Aggregator(Aggregator):
 
     def run(self, login_info, lastdate):
         URL = "https://www.aeonbank.co.jp/login/ib_02.html"
+        self.__lastdate = lastdate
 
         browser = Browser.firefox()
         browser.implicitly_wait(3)
@@ -159,9 +160,12 @@ class Aggregator(Aggregator):
                 if '日付' in item.text:
                     continue
                 cols = item.find_elements_by_tag_name('td')
+                date = self.__decode_date(cols[0].text)
+                if self.__lastdate > date:
+                    break
                 deposit = self.__decode_amount(cols[3].text) \
                             - self.__decode_amount(cols[2].text)
-                item = {'date' : self.__decode_date(cols[0].text),
+                item = {'date' : date,
                         'price' : 1,
                         'amount' : deposit,
                         'payout' : deposit,
@@ -172,10 +176,13 @@ class Aggregator(Aggregator):
                 # prepend.
                 data.insert(0, item)
 
-            if not '次の' in browser.find_element_by_css_selector('p.page').text:
-                # 次のxx件が無いので終了
-                break
-            browser.find_element_by_id('aftrPage2').click()
+            else:
+                if not '次の' in browser.find_element_by_css_selector('p.page').text:
+                    # 次のxx件が無いので終了
+                    break
+                browser.find_element_by_id('aftrPage2').click()
+                continue
+            break
 
         ## 明細ページに戻る
         # scroll to bottom
@@ -236,8 +243,11 @@ class Aggregator(Aggregator):
 
                 cols = row.find_elements_by_tag_name('td')
                 if pos == 'top':
+                    date = self.__decode_date(cols[2].text)
+                    if self.__lastdate > date:
+                        break
                     deposit = self.__decode_amount(cols[4].text)
-                    item = {'date' : self.__decode_date(cols[2].text),
+                    item = {'date' : date,
                             'price' : 1,
                             'payout' : deposit,
                             'amount' : deposit,
@@ -300,8 +310,11 @@ class Aggregator(Aggregator):
                     continue
 
                 if top:
+                    date = self.__decode_date(cols[2].text)
+                    if self.__lastdate > date:
+                        break
                     deposit = self.__decode_amount(cols[4].text)
-                    item = {'date' : self.__decode_date(cols[2].text),
+                    item = {'date' : date,
                             'price' : 1,
                             'amount' : deposit,
                             'payout' : deposit,

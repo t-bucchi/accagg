@@ -24,6 +24,7 @@ from accagg.passbook import PassBook, PassBookManager
 from accagg.passwordmanager import PasswordManager
 from accagg.fund import Fund
 import datetime
+import time
 
 class AggregaterResultError(Exception):
     pass
@@ -38,8 +39,12 @@ def aggregate(account):
             if lastdate < pb.lastdate:
                 lastdate = pb.lastdate
 
+    start = time.time()
     aggregator = accagg.bank.Factory.aggregator(account['BANKID'])
     all_data = aggregator.run(account, lastdate)
+    end = time.time()
+    print("  elapsed: %f[s]" % (end - start))
+
     #print(all_data)
     if not all_data:
         return

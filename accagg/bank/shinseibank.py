@@ -81,6 +81,7 @@ class Aggregator(Aggregator):
 
     def run(self, login_info, lastdate):
         URL = "https://bk.shinseibank.com/SFC/apps/services/www/SFC/desktopbrowser/default/login?mode=1&forward=SA0001"
+        self.__lastdate = lastdate
 
 #        import pdb; pdb.set_trace()
         browser = Browser.firefox()
@@ -139,38 +140,6 @@ class Aggregator(Aggregator):
         # pprint(result)
         return result
 
-        # 定期預金
-        # section = browser.find_element_by_css_selector('section[ng-show="isDisplayRegularAccountTotal"]')
-        #
-        # data = []
-        # item = {'date' : today,
-        #         'deposit' : 0,
-        #         'desc' : "円定期預金",
-        #         'balance' : self.__decode_amount(section.find_element_by_tag_name('dd').text)
-        # }
-        # data.append(item)
-        # result['time_deposit'] = data
-
-        # 投資信託
-        # section = browser.find_element_by_css_selector('section[ng-show="isDisplayLcymfFunds"]')
-        #
-        # rows = section.find_elements_by_tag_name('tr')
-        # for row in rows:
-        #     if '保有口数' in row.text:
-        #         continue
-        #     cols = row.find_elements_by_tag_name('td')
-        #     data = []
-        #
-        #     item = {'date' : today,
-        #             'deposit' : 0,
-        #             'desc' : '',
-        #             'currency' : cols[0].text,
-        #             'unit' : self.__decode_amount(cols[1].text.split('\n')[0]),
-        #             'balance' : self.__decode_amount(cols[5].text)
-        #     }
-        #     data.append(item)
-        #     result['fund_' + cols[0].text] = data
-
     # 普通預金
     def __get_ordinary(self, browser):
         browser.wait_element((By.PARTIAL_LINK_TEXT, '入出金明細'));
@@ -214,8 +183,11 @@ class Aggregator(Aggregator):
 
                 c = [i.text for i in row.find_all('td')]
                 # print(c)
+                date = self.__decode_date(c[0])
+                if self.__lastdate > date:
+                    break
                 deposit = self.__decode_amount(c[3]) - self.__decode_amount(c[2])
-                item = {'date' : self.__decode_date(c[0]),
+                item = {'date' : date,
                         'price' : 1,
                         'amount' : deposit,
                         'payout' : deposit,
@@ -229,21 +201,24 @@ class Aggregator(Aggregator):
                 # Passbook order is ascending
                 data.insert(0, item)
 
-            # pagerのテキストを取得
-            page_li = browser.find_element_by_css_selector('.pager li:nth-child(3)')
-            current_page = page_li.text
+            else:
+                # pagerのテキストを取得
+                page_li = browser.find_element_by_css_selector('.pager li:nth-child(3)')
+                current_page = page_li.text
 
-            next_link = browser.find_element_by_css_selector('li.next > a')
-            if 'ng-hide' in next_link.get_attribute('class'):
-                # 次のxx件が無いので終了
-                break
-            # 次をクリック
-            next_link.click()
+                next_link = browser.find_element_by_css_selector('li.next > a')
+                if 'ng-hide' in next_link.get_attribute('class'):
+                    # 次のxx件が無いので終了
+                    break
+                # 次をクリック
+                next_link.click()
 
-            # pager が切り替わるまで待つ
-            WebDriverWait(browser, 20).until(
-                lambda driver: driver.find_element_by_css_selector('.pager li:nth-child(3)').text != current_page
-            )
+                # pager が切り替わるまで待つ
+                WebDriverWait(browser, 20).until(
+                    lambda driver: driver.find_element_by_css_selector('.pager li:nth-child(3)').text != current_page
+                )
+                continue
+            break
 
         browser.find_element_by_link_text('トップ').click()
         browser.wait_for_loaded()
@@ -403,6 +378,9 @@ class Aggregator(Aggregator):
                     if '分配金' in desc:
                         name = None
 
+                    if self.__lastdate > date:
+                        break
+
                 elif len(cols) == 6 and name:
                     # ['58,012口\n17,238円', '100,000円\n0円', '', '', '100,000円', 'NISA優先（WEB）']
                     # ['81口\n5,614円', '45円', '', '', '45円', ''
@@ -440,12 +418,17 @@ class Aggregator(Aggregator):
                     position[name]['history'].insert(0, item)
                     balance[name] -= amount
 
-            # 次の10件
-            if not '次の10件' in browser.find_element_by_class_name('pageNumbersT').text:
-                break
+            else:
+                # 次の10件
+                if not '次の10件' in browser.find_element_by_class_name('pageNumbersT').text:
+                    break
 
-            browser.find_element_by_link_text('次の10件').click()
-            browser.wait_for_loaded()
+                browser.find_element_by_link_text('次の10件').click()
+                browser.wait_for_loaded()
+                continue
+
+            # if break at inner loop
+            break
 
         # pprint(position)
 
