@@ -130,6 +130,7 @@ class Aggregator(Aggregator):
         sleep(0.5)
         e = browser.wait_element((By.LINK_TEXT, "入出金明細"))
         browser.execute_script('arguments[0].click();', e)
+        self.wait_until_blocked(browser)
 
         # 口座名取得
         browser.wait_element((By.CSS_SELECTOR, '[nblabel="口座名"]'))
@@ -219,8 +220,11 @@ class Aggregator(Aggregator):
             es = 0
             try:
                 es = browser.find_element_by_css_selector('.m-pager-prev')
+#                print(es.get_attribute('outerHTML'))
             except NoSuchElementException:
 #                print("no entry")
+                break
+            if not es:
                 break
             browser.implicitly_wait(180)
 
@@ -235,17 +239,20 @@ class Aggregator(Aggregator):
 
     def __get_time_deposit(self, browser):
 
+#        import pdb; pdb.set_trace()
         browser.implicitly_wait(0)
         es = 0
         try:
-            es = browser.find_element_by_link_text('円定期預金')
+            es = browser.find_element_by_link_text('円預金・仕組預金')
         except NoSuchElementException:
             print("no entry")
             return None
         browser.implicitly_wait(180)
         es.click()
-        self.wait_until_blocked(browser)
         sleep(0.5)
+
+        # 円定期預金
+        browser.find_element_by_link_text('円定期預金').click()
 
         # 取引履歴
         browser.find_element_by_link_text('取引履歴').click()
@@ -262,6 +269,14 @@ class Aggregator(Aggregator):
             e = e.find_elements_by_css_selector('li')[i]
             subname = e.text
             e.click()
+
+            # 並び順
+            # e = browser.find_element_by_css_selector('[nblabel="並び順"]')
+            # e.click()
+            # e = e.find_elements_by_css_selector('li')[1]
+            # e.click()
+
+            #
             browser.find_element_by_partial_link_text('表示').click()
 
             # 更新待ち
@@ -292,29 +307,39 @@ class Aggregator(Aggregator):
         data = []
         balance = 0
 
-        soup = BeautifulSoup(browser.page_source, "html.parser")
-        for row in soup.select('tr'):
-            c = [x for x in row.select('th p')[0].stripped_strings]
-            date = self.__decode_date(c[0])
-            if self.__lastdate > date:
-                break
+        # ページ数取得
+        num = browser.find_element_by_css_selector('p.m-counter').text
+        num = int(num.split(' ')[2])
 
-            desc = ' '.join(c[1:])
+        for i in range(1, num + 1):
+            if i != 1:
+                # ページ遷移
+                browser.find_element_by_link_text(str(i)).click()
+                self.wait_until_blocked(browser)
 
-            c = [x for x in row.select('td .m-txtEx')[0].stripped_strings]
-            deposit = self._decode_amount(c[1])
-            if c[0] == '出':
-                deposit = -deposit
+            soup = BeautifulSoup(browser.page_source, "html.parser")
+            for row in soup.select('tr'):
+                c = [x for x in row.select('th p')[0].stripped_strings]
+                date = self.__decode_date(c[0])
+                if self.__lastdate > date:
+                    break
 
-            balance += deposit
-            item = {'date' : date,
-                    'price': 1,
-                    'amount' : deposit,
-                    'payout' : deposit,
-                    'desc' : desc,
-                    'balance' : balance
-            }
-#            print(item)
-            data.append(item)
+                desc = ' '.join(c[1:])
+
+                c = [x for x in row.select('td .m-txtEx')[0].stripped_strings]
+                deposit = self._decode_amount(c[1])
+                if c[0] == '出':
+                    deposit = -deposit
+
+                balance += deposit
+                item = {'date' : date,
+                        'price': 1,
+                        'amount' : deposit,
+                        'payout' : deposit,
+                        'desc' : desc,
+                        'balance' : balance
+                }
+    #            print(item)
+                data.append(item)
 
         return data
