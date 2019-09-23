@@ -88,7 +88,8 @@ class Aggregator(Aggregator):
         except NoSuchElementException:
             print("no entry")
         else:
-            es[0].click()
+            if es:
+                es[0].click()
 
         # ログイン後画面
 

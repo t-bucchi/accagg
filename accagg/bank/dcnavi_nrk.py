@@ -81,6 +81,10 @@ class Aggregator(Aggregator):
 
         # import pdb; pdb.set_trace()
 
+        # メンテナンス
+        if 'メンテナンス中' in browser.find_element_by_tag_name('html').text:
+            return []
+
         browser.find_element_by_id('dcnvToNrkLogin').click();
 
         # enter

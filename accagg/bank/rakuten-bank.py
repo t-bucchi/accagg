@@ -108,9 +108,9 @@ class Aggregator(Aggregator):
             result.extend(data)
 
         # 円定期預金
-        # data = self.__get_time_deposit(browser)
-        # if data:
-        #     result.extend(data)
+        data = self.__get_time_deposit(browser)
+        if data:
+            result.extend(data)
 
         browser.quit()
         return result
@@ -146,6 +146,113 @@ class Aggregator(Aggregator):
 
         # ホームへ戻る
         browser.find_element_by_link_text('口座情報').click()
+        # wait for display
+        browser.wait_for_loaded()
+
+        return [account]
+
+    def __get_time_deposit(self, browser):
+        # import pdb; pdb.set_trace()
+
+        # 現在の合計を取得
+        total = self.__decode_amount(browser.find_elements_by_css_selector('.amount')[3].text)
+
+        # 定期預金
+        browser.find_element_by_link_text('定期預金').click()
+
+        # 明細
+        browser.find_element_by_css_selector(u'input[value="明細照会・変更・解約"]').click()
+
+        # 解約済み
+        browser.find_element_by_partial_link_text('満期・中途解約済み').click()
+
+        soup = BeautifulSoup(browser.page_source, "html.parser")
+
+        account = {'name': 'time_deposit',
+                'unit': 'Yen',
+                'account': '普通', # 口座種別
+                'history': [],
+        }
+        data = []
+
+        # 解約済みを収集
+        for row in soup.find_all('div', class_='medium'):
+            # if not row.td:
+            #     continue
+            div = row.find_all('div')
+
+            begin = self.__decode_date(div[0].text.strip().split('：')[1])
+            end = self.__decode_date(div[8].text.strip().split('：')[1])
+            depo = self.__decode_amount(div[9].find_all('span')[1].text)
+            ret = self.__decode_amount(div[10].find_all('span')[1].text)
+
+            cols = [i.text.strip() for i in row.find_all('td')]
+
+            # 返却
+            item = {'date': end,
+                    'price': 1,
+                    'amount': -ret,
+                    'payout': -ret,
+                    'balance': 0,
+                    'desc': '満期',
+            }
+            data.insert(0, item)
+
+            # 利子
+            item = {'date': end,
+                    'price': 1,
+                    'amount': ret - depo,
+                    'payout': ret - depo,
+                    'balance': 0,
+                    'desc': '利息',
+            }
+            data.insert(0, item)
+
+            # 預け入れ
+            item = {'date': begin,
+                    'price': 1,
+                    'amount': depo,
+                    'payout': depo,
+                    'balance': 0,
+                    'desc': div[2].find_all('span')[1].text,
+            }
+            data.insert(0, item)
+
+        # 契約中
+        browser.find_element_by_partial_link_text('定期預金一覧に戻る').click()
+
+        soup = BeautifulSoup(browser.page_source, "html.parser")
+
+        for row in soup.find('table', class_='smedium').find_all('tr'):
+            if not row.td:
+                continue
+
+            cols = [i.text.strip() for i in row.find_all('td')]
+            # ['', '2019/09/17', '0003', '資金お引越し', '1ヶ月', '0.15%', '2019/10/17', '満期自動解約', '142,976円']
+            item = {'date': self.__decode_date(cols[1]),
+                    'price': 1,
+                    'amount': self.__decode_amount(cols[8]),
+                    'payout': self.__decode_amount(cols[8]),
+                    'balance': 0,
+                    'desc': cols[3],
+            }
+            data.insert(0, item)
+
+        # 解約済みと契約中を並べ替え
+        data = sorted(data, key=lambda item: item['date'])
+
+        # balance を逆算
+        balance = total
+        for i in reversed(range(0,len(data))):
+            data[i]['balance'] = balance
+            balance -= data[i]['amount']
+
+        # from pprint import pprint
+        # pprint(data)
+        account['history'] = data
+
+        # ホームへ戻る
+        browser.find_element_by_partial_link_text('MyAccount').click()
         # wait for display
         browser.wait_for_loaded()
 
