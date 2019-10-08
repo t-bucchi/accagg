@@ -107,6 +107,14 @@ class Aggregator(Aggregator):
         browser.wait_element((By.CSS_SELECTOR, '.linkTypeNormal a'))
         browser.wait_for_loaded()
 
+        browser.implicitly_wait(1)
+        try:
+            browser.wait_for_item((By.ID, 'modal-close')).click()
+        except NoSuchElementException:
+            pass
+
+        browser.implicitly_wait(180)
+
         browser.execute_script('$("div.rkBnrBlock").removeClass("rkBnrBlock")')
         browser.execute_script('$("a[target=\\"_blank\\"]").removeAttr("target")')
         browser.execute_script('$(".externalLink").removeClass("externalLink")')
