@@ -168,11 +168,11 @@ class PassBook(object):
                 for i in reader:
                     self.__data.append(parser(i))
 
+            if 'lastdate' in self.__info:
+                self.__info['lastdate'] = self.__str2date(self.__info['lastdate'])
+
         except IOError:
             pass
-
-        if 'lastdate' in self.__info:
-            self.__info['lastdate'] = self.__str2date(self.__info['lastdate'])
 
 class PassBookManager(object):
     @classmethod
