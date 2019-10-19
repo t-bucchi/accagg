@@ -109,7 +109,7 @@ class Aggregator(Aggregator):
         # ホーム
 
         result = []
-#        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         # 普通預金
         data = self.__get_ordinary(browser)
         if data:
@@ -156,11 +156,12 @@ class Aggregator(Aggregator):
         # print(result)
 
         # ホームへ戻る
+        self.wait_until_blocked(browser)
         browser.find_element_by_link_text('ホーム').click()
         # wait for display
         browser.wait_for_title_changed()
         browser.wait_for_loaded()
-        browser.wait_element((By.LINK_TEXT, '円普通預金'))
+        browser.wait_element((By.LINK_TEXT, 'サイトマップ'))
 
         return result
 
@@ -299,7 +300,7 @@ class Aggregator(Aggregator):
         # wait for display
         browser.wait_for_title_changed()
         browser.wait_for_loaded()
-        browser.wait_element((By.LINK_TEXT, '円普通預金'))
+        browser.wait_element((By.LINK_TEXT, 'サイトマップ'))
 
         return result
 
@@ -321,8 +322,8 @@ class Aggregator(Aggregator):
             for row in soup.select('tr'):
                 c = [x for x in row.select('th p')[0].stripped_strings]
                 date = self.__decode_date(c[0])
-                if self.__lastdate > date:
-                    break
+                # if self.__lastdate > date:
+                #     break
 
                 desc = ' '.join(c[1:])
 

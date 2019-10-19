@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import plotly
-import plotly.plotly as py
+import chart_studio.plotly as py
 import plotly.graph_objs as go
 import accagg.passbook as pb
 import re
@@ -56,8 +56,9 @@ class Asset:
     asset = {}
     book = []
     parent = {
-        '非リスク資産': None,
-        'リスク資産': None,
+        'Total': None,
+        '非リスク資産': 'Total',
+        'リスク資産': 'Total',
         '株式': 'リスク資産',
         '債券': 'リスク資産',
         'REIT': 'リスク資産',
@@ -114,6 +115,7 @@ class Asset:
         parent = self.__get_parent(id)
         # print('id:%s class:%s value:%s parent:%s profit:%s' %
         #     (id, class_, value, parent, profit))
+        self.asset[id]['parent'] = parent
         if parent:
             self.__add_sub(parent, parent, value, profit, balance, payout)
 
@@ -150,15 +152,48 @@ asset = Asset()
 for i in book:
     asset.add(i)
 
-pprint(asset.tree())
+tree = asset.tree()
+
+html = '<ul>'
+html += '<li>名前</li>'
+html += '<li>評価額</li>'
+html += '<li>支払</li>'
+html += '<li>利益</li>'
+html += '<li>残高</li>'
+html += '<li>平均単価</li>'
+html += '</ul>\n'
+
+def recurse(tree, func, depth = 0):
+    html = ''
+    for x in tree:
+        # print('%s%s\tvalue:%d\tpayout:%d\tprofit:%d\tbalance:%d'%
+        #     (' '*depth, x['label'], x['value'], x['payout'], x['profit'], x['balance']))
+        # func(x, depth)
+        html += "<ul id='%s'>" % x['label']
+        html += '<li>{}</li>'.format('　'*depth + x['label'])
+        html += '<li>{:,d}</li>'.format(int(x['value']))
+        html += '<li>{:,d}</li>'.format(int(x['payout']))
+        html += '<li>{:+,.2f}</li>'.format(x['profit'])
+        html += '<li>{:,d}</li>'.format(int(x['balance']))
+        html += '<li>{:,.2f}</li>'.format((x['value'] - x['profit'])/x['balance']*10000)
+        html += '</ul>\n'
+        if x['children']:
+            html += "<group parent='%s'>" % x['label']
+            html += recurse(x['children'],func, depth+1)
+            html += '</group>\n'
+    return html
+
+def put_item(x, depth=0):
+    print('%s%s\tvalue:%d\tpayout:%d\tprofit:%d\tbalance:%d'.format(
+        '   '*depth, x['label'], x['value'], x['payout'], x['profit'], x['balance']))
 
 d = {
-    'labels': ['Total'],
-    'parents': [None],
-    'values': [total],
-    'text': ['{:,d}'.format(int(total))],
-    'hover': [''],
-    'ids': ['Total'],
+    'labels': [],
+    'parents': [],
+    'values': [],
+    'text': [],
+    'hover': [],
+    'ids': [],
 }
 
 for k, v in asset.asset.items():
@@ -173,7 +208,7 @@ for k, v in asset.asset.items():
     if asset.parent[k]:
         d['parents'].append(asset.parent[k])
     else:
-        d['parents'].append('Total')
+        d['parents'].append(None)
     d['values'].append(value)
     d['text'].append('{:,d}<br />{:.2f}%'.format(int(value), value / total * 100))
     if value - profit == 0:
@@ -197,5 +232,66 @@ layout = go.Layout(
     margin = go.layout.Margin(t=0, l=0, r=0, b=0)
 )
 
-plotly.offline.plot(go.Figure([trace], layout), filename='basic_sunburst_chart_total_branchvalues.html')
-#print(plotly.offline.plot(go.Figure([trace], layout), include_plotlyjs=True, output_type='div'))
+#plotly.offline.plot(go.Figure([trace], layout), filename='basic_sunburst_chart_total_branchvalues.html')
+print('''
+<html>
+<head>
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+</head>
+<style type="text/css">
+ul, li {
+   list-style-type:none;
+   margin: 0px;
+}
+.list_flex{
+   width: 80%;
+}
+.list_flex ul{
+  display: flex;
+  flex-wrap: wrap;}
+.list_flex li {
+   width: 20%; /* ％指定で列を自由に設定可能 */
+   box-sizing: border-box;
+   padding-left:5px;}
+.list_flex > ul:first-child li {
+   font-weight:bold;
+   text-align:center;
+   padding:0;}
+li {
+   text-align: right;
+}
+.list_flex li:first-child {
+   text-align:left;
+   width: 40%;}
+.list_flex li:nth-child(n+1) {
+   border-top: 1px solid #000;}
+.list_flex ul:last-child li {
+   border-bottom: 1px solid #000;}
+.list_flex li:nth-child(n+1) {
+   border-left: 1px solid #000;}
+.list_flex li:last-child {
+   border-right: 1px solid #000;}
+.list_flex_6col li{width:10%;} /* 6列にする　*/
+.list_flex_5col li{width:15%;} /* 5列にする　*/
+.list_flex_4col li{width:25%;} /* ４列にする　*/
+.list_flex_3col li{width:33%;} /* ３列にする　*/
+</style>
+<body>
+''')
+
+print(plotly.offline.plot(go.Figure([trace], layout), include_plotlyjs=True, output_type='div'))
+print('<div class="list_flex list_flex_6col">'+html+recurse(tree, put_item)+'</div>')
+
+print('''
+<script type="text/javascript">
+$('.list_flex group group group').toggle()
+$('ul').click(function() {
+    var id = $(this).attr('id')
+    $('group[parent="'+id+'"]').toggle()
+})
+</script>
+</body>
+</html>
+''')
+
+sys.exit(0)

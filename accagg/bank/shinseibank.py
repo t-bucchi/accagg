@@ -378,8 +378,8 @@ class Aggregator(Aggregator):
                     if '分配金' in desc:
                         name = None
 
-                    if self.__lastdate > date:
-                        break
+                    # if self.__lastdate > date:
+                    #     break
 
                 elif len(cols) == 6 and name:
                     # ['58,012口\n17,238円', '100,000円\n0円', '', '', '100,000円', 'NISA優先（WEB）']

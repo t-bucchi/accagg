@@ -178,20 +178,22 @@ class Aggregator(Aggregator):
         # 契約中
         soup = BeautifulSoup(browser.page_source, "html.parser")
 
-        for row in soup.find('table', class_='smedium').find_all('tr'):
-            if not row.td:
-                continue
+        table = soup.find('table', class_='smedium')
+        if table:
+            for row in table.find_all('tr'):
+                if not row.td:
+                    continue
 
-            cols = [i.text.strip() for i in row.find_all('td')]
-            # ['', '2019/09/17', '0003', '資金お引越し', '1ヶ月', '0.15%', '2019/10/17', '満期自動解約', '142,976円']
-            item = {'date': self.__decode_date(cols[1]),
-                    'price': 1,
-                    'amount': self.__decode_amount(cols[8]),
-                    'payout': self.__decode_amount(cols[8]),
-                    'balance': 0,
-                    'desc': cols[3],
-            }
-            data.insert(0, item)
+                cols = [i.text.strip() for i in row.find_all('td')]
+                # ['', '2019/09/17', '0003', '資金お引越し', '1ヶ月', '0.15%', '2019/10/17', '満期自動解約', '142,976円']
+                item = {'date': self.__decode_date(cols[1]),
+                        'price': 1,
+                        'amount': self.__decode_amount(cols[8]),
+                        'payout': self.__decode_amount(cols[8]),
+                        'balance': 0,
+                        'desc': cols[3],
+                }
+                data.insert(0, item)
 
         # 解約済みと契約中を並べ替え
         data = sorted(data, key=lambda item: item['date'])

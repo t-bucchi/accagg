@@ -134,10 +134,13 @@ class Aggregator(Aggregator):
 #                        'payout': self._decode_number(re.sub(r'.*\n', '', cols[6])),
                         'history': [],
                 }
-                position[(meta['name'], meta['account'])] = meta
+                # position[(meta['name'], meta['account')] = meta
+                if (meta['name']) in position:
+                    meta['balance'] += position[(meta['name'])]['balance']
+                position[(meta['name'])] = meta
 
 #        pprint(position)
-#        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
 
         # 取引履歴
         browser.find_element_by_id('nav-main-menu').find_element_by_link_text('口座管理').click()
@@ -187,7 +190,8 @@ class Aggregator(Aggregator):
                         'desc' : cols[7],
                 }
 
-                index = (name, cols[5])
+#                index = (name, cols[5])
+                index = (name)
                 if not index in position:
                     # position にない場合は position を追加
                     meta = {'name': name,
@@ -209,7 +213,7 @@ class Aggregator(Aggregator):
             es[0].click()
 
 #            pprint(position)
-#        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
 
         for index in position.keys():
             balance = position[index].pop('balance')

@@ -22,6 +22,7 @@ from .abstract import Aggregator
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
 
 from ..browser import Browser
@@ -109,8 +110,10 @@ class Aggregator(Aggregator):
 
         browser.implicitly_wait(1)
         try:
-            browser.wait_for_item((By.ID, 'modal-close')).click()
+            browser.find_element_by_id('modal-close').click()
         except NoSuchElementException:
+            pass
+        except TimeoutException:
             pass
 
         browser.implicitly_wait(180)

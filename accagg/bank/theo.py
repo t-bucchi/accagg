@@ -81,25 +81,76 @@ class Aggregator(Aggregator):
 
         # Click login
         browser.find_elements_by_tag_name('button')[-1].click();
-
         # wait for loading
         browser.wait_for_title_changed()
 
-#        import pdb; pdb.set_trace()
+        # Inject XHR hook
+        browser.execute_script("""
+        (function(XHR) {
+          "use strict";
+
+          var element = document.createElement('div');
+          element.id = "interceptedResponse";
+          element.appendChild(document.createTextNode(""));
+          document.body.appendChild(element);
+
+          var open = XHR.prototype.open;
+          var send = XHR.prototype.send;
+
+          XHR.prototype.open = function(method, url, async, user, pass) {
+            this._url = url; // want to track the url requested
+            open.call(this, method, url, async, user, pass);
+          };
+
+          XHR.prototype.send = function(data) {
+            var self = this;
+            var oldOnReadyStateChange;
+            var url = this._url;
+
+            function onReadyStateChange() {
+              if(url == '/customer/portfolio-statuses' &&
+                self.status === 200 && self.readyState == 4 /* complete */) {
+                document.getElementById("interceptedResponse").innerHTML = self.responseText;
+              }
+              if(oldOnReadyStateChange) {
+                oldOnReadyStateChange();
+              }
+            }
+
+            if(this.addEventListener) {
+              this.addEventListener("readystatechange", onReadyStateChange,
+                false);
+            } else {
+              oldOnReadyStateChange = this.onreadystatechange;
+              this.onreadystatechange = onReadyStateChange;
+            }
+            send.call(this, data);
+          }
+        })(XMLHttpRequest);
+        """)
+        print("wait\n")
 
         # ログイン後画面
 
         data = []
 
-        js = browser.find_elements_by_xpath('//script[contains(text(), "CDATA")]')[0].get_attribute('innerHTML')
-        json_text = [line for line in js.split('\n') if 'JSON.parse' in line][0]
-        json_text = json_text.encode('UTF-8').decode('unicode_escape')
-        json_text = re.sub(r'.*JSON\.parse\(\'', '', json_text, 1)
-        json_text = re.sub(r'\'.*', '', json_text)
-        items = json.loads(json_text)
+        timeout = 100
+        while timeout > 0:
+            js = browser.find_element_by_id('interceptedResponse').get_attribute('innerHTML')
+            if js != '':
+                break
+            sleep(0.1)
+            timeout -= 1
+        else:
+            print("error\n")
+            return
+
+        # import pdb; pdb.set_trace()
+
+        items = json.loads(js)
 
         deposit = 0
-        for i in items:
+        for i in items['result']:
             date = self._decode_date(i['date'])
 
             item = {'date' : date,

@@ -99,9 +99,9 @@ def aggregate(account):
         passbook.save()
 
     # Remove cancelled account
-    names = [data['name'] for data in all_data]
+    names = [data['name'].replace('/', '／') for data in all_data]
     for i in [i[1] for i in PassBookManager.find() if i[0] == account['name']]:
-        if i in names or i in i.replace('/', '／'):
+        if i in names or i.replace('/', '／') in names:
             continue
 
         passbook = PassBook(account['name'], i)
