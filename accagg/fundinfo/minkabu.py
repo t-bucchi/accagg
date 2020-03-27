@@ -123,12 +123,10 @@ class Minkabu(Scraper):
         soup = BeautifulSoup(body, "html.parser")
         # import pdb; pdb.set_trace()
 
-        price = soup.find(class_='reference_price')
-
         info = {}
         info['id'] = id
-        info['name'] = soup.find(class_='fund_name_com').span.text
-        info['class'] = soup.find_all(class_='classification')[1].text[3:]
-        info['price'] = self.__decode_amount(price.i.text)
-        info['lastdate'] = self.__decode_strdate(price.b.span.text)
+        info['name'] = soup.find(class_='stock_name').text
+        info['class'] = soup.find(text='分類').parent.parent.td.text
+        info['price'] = self.__decode_amount(soup.find(class_='stock_price').text)
+        info['lastdate'] = self.__decode_strdate(soup.find(class_='fsm').text)
         return info
